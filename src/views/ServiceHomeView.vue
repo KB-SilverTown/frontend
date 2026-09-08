@@ -44,7 +44,7 @@ const serviceScreens = {
           selected: true,
           to: { name: 'mobile-branches' },
         },
-        { label: '가입 정보' },
+        { label: '가입 정보', to: { name: 'profile' } },
       ],
     ],
     primaryLabel: '',
