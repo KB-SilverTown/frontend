@@ -19,9 +19,11 @@ const router = useRouter()
 const billItems = ref([])
 const monthlySummary = ref(null)
 const billLoading = ref(false)
+const billSummaryLoading = ref(false)
 const billListError = ref('')
 const billSummaryError = ref('')
 let billRequestId = 0
+let billSummaryRequestId = 0
 
 const serviceScreens = {
   bills: {
@@ -67,7 +69,9 @@ const billSummaryText = computed(() => {
 
 async function loadBillData() {
   const requestId = ++billRequestId
+  const summaryRequestId = ++billSummaryRequestId
   billLoading.value = true
+  billSummaryLoading.value = true
   billItems.value = []
   monthlySummary.value = null
   billListError.value = ''
@@ -89,11 +93,27 @@ async function loadBillData() {
         billsApi
           .monthlySummary()
           .then((value) => {
-            if (requestId === billRequestId) monthlySummary.value = value
+            if (
+              requestId === billRequestId &&
+              summaryRequestId === billSummaryRequestId
+            ) {
+              monthlySummary.value = value
+            }
           })
           .catch(() => {
-            if (requestId === billRequestId) {
+            if (
+              requestId === billRequestId &&
+              summaryRequestId === billSummaryRequestId
+            ) {
               billSummaryError.value = '이번 달 합계를 불러오지 못했어요.'
+            }
+          })
+          .finally(() => {
+            if (
+              requestId === billRequestId &&
+              summaryRequestId === billSummaryRequestId
+            ) {
+              billSummaryLoading.value = false
             }
           }),
       ])
@@ -103,9 +123,47 @@ async function loadBillData() {
   }
 }
 
+async function retryBillSummary() {
+  if (billLoading.value || billSummaryLoading.value) return
+
+  const currentBillRequestId = billRequestId
+  const summaryRequestId = ++billSummaryRequestId
+  billSummaryLoading.value = true
+  monthlySummary.value = null
+  billSummaryError.value = ''
+
+  try {
+    await withAppLoading(async () => {
+      const value = await billsApi.monthlySummary()
+      if (
+        currentBillRequestId === billRequestId &&
+        summaryRequestId === billSummaryRequestId
+      ) {
+        monthlySummary.value = value
+      }
+    })
+  } catch {
+    if (
+      currentBillRequestId === billRequestId &&
+      summaryRequestId === billSummaryRequestId
+    ) {
+      billSummaryError.value = '이번 달 합계를 불러오지 못했어요.'
+    }
+  } finally {
+    if (
+      currentBillRequestId === billRequestId &&
+      summaryRequestId === billSummaryRequestId
+    ) {
+      billSummaryLoading.value = false
+    }
+  }
+}
+
 function invalidateBillRequest() {
   billRequestId += 1
+  billSummaryRequestId += 1
   billLoading.value = false
+  billSummaryLoading.value = false
 }
 
 function startVoiceAssist() {
@@ -255,19 +313,34 @@ onBeforeUnmount(invalidateBillRequest)
           <ReminderSummary v-if="service === 'living'" />
 
           <p
+            v-if="service === 'bills' && billSummaryLoading && !billLoading"
+            aria-live="polite"
+            class="service-home-data-summary"
+          >
+            이번 달 합계를 불러오고 있어요.
+          </p>
+          <p
             v-if="service === 'bills' && billSummaryText"
             aria-live="polite"
             class="service-home-data-summary"
           >
             {{ billSummaryText }}
           </p>
-          <p
+          <div
             v-if="service === 'bills' && billSummaryError"
-            class="service-home-data-error"
+            aria-live="polite"
+            class="service-home-data-error-state"
             role="status"
           >
-            {{ billSummaryError }}
-          </p>
+            <p class="service-home-data-error">{{ billSummaryError }}</p>
+            <Button
+              :disabled="billSummaryLoading"
+              variant="secondary"
+              @click="retryBillSummary"
+            >
+              다시 불러오기
+            </Button>
+          </div>
         </div>
       </main>
 
