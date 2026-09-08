@@ -99,15 +99,9 @@ function startVoiceAssist() {
       </footer>
 
       <nav
-        aria-label="주요 메뉴"
-        class="app-bottom-nav three-items service-bottom-nav"
+        aria-label="서비스 메뉴"
+        class="app-bottom-nav service-bottom-nav"
       >
-        <RouterLink
-          :aria-current="route.name === 'transfer-home' ? 'page' : undefined"
-          :to="{ name: 'transfer-home' }"
-        >
-          홈
-        </RouterLink>
         <RouterLink
           :aria-current="route.name === 'bills-home' ? 'page' : undefined"
           :to="{ name: 'bills-home' }"
