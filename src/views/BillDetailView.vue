@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ const detailRows = computed(() => {
 async function loadBill() {
   const currentRequestId = ++requestId
   const billId = String(route.params.billId ?? '').trim()
+  bill.value = null
   loading.value = true
   errorMessage.value = ''
 
@@ -63,7 +64,7 @@ function openCamera() {
   return router.push({ name: 'bills-camera' })
 }
 
-onMounted(loadBill)
+watch(() => route.params.billId, loadBill, { immediate: true })
 onBeforeUnmount(() => {
   requestId += 1
 })
