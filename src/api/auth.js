@@ -13,6 +13,11 @@ export const authApi = {
     return parseAuthResponse(data)
   },
 
+  async refresh(request) {
+    const { data } = await apiClient.post('/auth/refresh', request)
+    return parseAuthResponse(data)
+  },
+
   async logout(request) {
     await apiClient.post('/auth/logout', request)
   },

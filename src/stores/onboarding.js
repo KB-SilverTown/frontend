@@ -15,6 +15,16 @@ const REQUIRED_DATA_STEPS = ['consents', 'account', 'identity', 'contact', 'fina
 const AUTH_STORAGE_WARNING =
   '로그인 상태를 안전하게 저장하지 못했어요. 앱을 종료하면 다시 로그인해야 해요.'
 
+function isAccessTokenExpired(session) {
+  const expiresAt = Date.parse(session?.expiresAt ?? '')
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now()
+}
+
+function shouldClearAuthSession(error) {
+  const status = error?.response?.status
+  return status === 401 || status === 403
+}
+
 export const useOnboardingStore = defineStore('onboarding', {
   state: () => ({
     draft: createOnboardingDraft(),
@@ -100,12 +110,35 @@ export const useOnboardingStore = defineStore('onboarding', {
     },
 
     async restoreAuthSession() {
+      let session
       try {
-        this.authResult = await loadAuthSession()
-        if (this.authResult) this.authStorageWarning = null
+        session = await loadAuthSession({ includeExpired: true })
       } catch {
         this.authResult = null
         this.authStorageWarning = AUTH_STORAGE_WARNING
+        return this.authResult
+      }
+
+      if (!session) {
+        this.authResult = null
+        return this.authResult
+      }
+
+      try {
+        if (isAccessTokenExpired(session)) {
+          const refreshedSession = await onboardingApi.refresh({
+            refreshToken: session.refreshToken,
+          })
+          await this.persistAuthSession(refreshedSession)
+        } else {
+          this.authResult = session
+          this.authStorageWarning = null
+        }
+      } catch (error) {
+        this.authResult = null
+        if (shouldClearAuthSession(error)) {
+          await clearAuthSession().catch(() => {})
+        }
       }
 
       return this.authResult
