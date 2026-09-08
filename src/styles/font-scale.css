@@ -1,0 +1,71 @@
+:root {
+  --font-size-title: 30px;
+  --font-size-body: 19px;
+  --font-size-action: 24px;
+  --font-size-display: 36px;
+  --font-size-nav: 16px;
+}
+
+:root[data-font-scale='large'] {
+  --font-size-title: 34px;
+  --font-size-body: 21px;
+  --font-size-action: 28px;
+  --font-size-display: 40px;
+  --font-size-nav: 18px;
+}
+
+.screen-heading h1 {
+  font-size: var(--font-size-title);
+}
+
+.screen-heading > p {
+  font-size: var(--font-size-body);
+}
+
+.onboarding-device .app-actions button {
+  font-size: var(--font-size-action);
+}
+
+.app-bottom-nav button {
+  font-size: var(--font-size-nav);
+}
+
+.font-size-picker {
+  margin: 0;
+  padding: 18px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.font-size-picker legend {
+  padding: 0 8px;
+  font-size: var(--font-size-body);
+  font-weight: 800;
+}
+
+.font-size-options {
+  display: grid;
+  gap: 12px;
+}
+
+.font-size-option {
+  min-height: 62px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  font-weight: 800;
+}
+
+.font-size-option.selected {
+  border-color: var(--primary);
+  background: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.font-size-option:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ring) 45%, transparent);
+  outline-offset: 2px;
+}
