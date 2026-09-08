@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { billsApi } from '@/api/bills.js'
 import { withAppLoading } from '@/services/appLoading.js'
-import { buildBillConfirmationRequest, isValidBillConfirmationDate, presentBillConfirmation } from '@/services/billConfirmationPresentation.js'
+import {
+  buildBillConfirmationRequest,
+  isValidBillConfirmationDate,
+  presentBillConfirmation,
+} from '@/services/billConfirmationPresentation.js'
 import { presentBill } from '@/services/billPresentation.js'
 import '@/styles/bill-review.css'
 
@@ -22,6 +26,13 @@ const form = reactive({ payee: '', amount: '', dueDate: '' })
 let requestId = 0
 
 const billId = computed(() => String(route.params.billId ?? '').trim())
+const isLowConfidence = computed(() => route.name === 'bill-low-confidence')
+const headingTitle = computed(() => (isLowConfidence.value ? '낮은 신뢰도 수정' : '납부 내용 확인'))
+const headingDescription = computed(() =>
+  isLowConfidence.value
+    ? '확실하지 않은 항목을 직접 확인하고 수정합니다.'
+    : '납부하기 전에 고지서 정보를 확인해 주세요.',
+)
 const presentedBill = computed(() => (bill.value ? presentBill(bill.value) : null))
 
 function extractBill(value) {
@@ -120,6 +131,10 @@ async function confirmBill() {
   try {
     const response = await withAppLoading(() => billsApi.confirm(billId.value, validation.request))
     if (isUnexpectedConfirmation(response)) {
+      if (!isLowConfidence.value) {
+        await router.replace({ name: 'bill-low-confidence', params: { billId: billId.value } })
+        return
+      }
       throw new Error('고지서 정보를 다시 확인해 주세요.')
     }
 
@@ -176,8 +191,8 @@ onBeforeUnmount(() => {
 
       <main class="app-main bill-review-main">
         <section class="screen-heading bill-review-heading">
-          <h1>납부 내용 확인</h1>
-          <p>납부하기 전에 고지서 정보를 확인해 주세요.</p>
+          <h1>{{ headingTitle }}</h1>
+          <p>{{ headingDescription }}</p>
         </section>
 
         <p
@@ -206,6 +221,22 @@ onBeforeUnmount(() => {
           aria-label="고지서 납부 내용 확인"
           class="bill-review-card"
         >
+          <section
+            v-if="isLowConfidence"
+            aria-label="낮은 신뢰도 안내"
+            class="bill-review-warning"
+          >
+            <span
+              aria-hidden="true"
+              class="bill-review-warning-icon"
+            >
+              ?
+            </span>
+            <div>
+              <strong>고지서 정보를 다시 확인해 주세요</strong>
+              <p>인식 정확도가 낮은 항목입니다.</p>
+            </div>
+          </section>
           <div class="bill-review-overview">
             <strong>{{ presentedBill.payee }}</strong>
             <p>서버가 인식한 내용을 납부 전에 확인해 주세요.</p>
@@ -307,7 +338,7 @@ onBeforeUnmount(() => {
           :disabled="loading || saving || !presentedBill"
           @click="confirmBill"
         >
-          {{ saving ? '확인하고 있어요…' : '내용 확인' }}
+          {{ saving ? '확인하고 있어요…' : isLowConfidence ? '수정 완료' : '내용 확인' }}
         </Button>
         <Button
           class="w-full"
