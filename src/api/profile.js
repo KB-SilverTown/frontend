@@ -31,4 +31,18 @@ export const profileApi = {
     const { data } = await apiClient.put('/users/me', request, updateConfig(options))
     return data
   },
+
+  async getConsents() {
+    const { data } = await apiClient.get('/users/me/consents')
+    return data
+  },
+
+  async updateConsents(request, options = {}) {
+    const { data } = await apiClient.put(
+      '/users/me/consents',
+      request,
+      updateConfig(options),
+    )
+    return data
+  },
 }

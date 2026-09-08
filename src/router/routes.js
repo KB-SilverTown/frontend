@@ -33,6 +33,11 @@ export const routes = [
     component: () => import('@/views/ProfileView.vue'),
   },
   {
+    path: '/my-page/consents',
+    name: 'consents',
+    component: () => import('@/views/ConsentView.vue'),
+  },
+  {
     path: '/onboarding/:stepId',
     name: 'onboarding',
     component: () => import('@/views/OnboardingView.vue'),
