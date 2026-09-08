@@ -25,8 +25,8 @@ const variants = cva(
         destructive: 'bg-destructive text-white hover:bg-destructive/90',
       },
       size: {
-        default: 'min-h-14 px-6 text-[17px]',
-        sm: 'min-h-11 px-4 text-[15px]',
+        default: 'min-h-14 px-6 text-[length:var(--font-size-action)]',
+        sm: 'min-h-11 px-4 text-[length:var(--font-size-body)]',
         icon: 'size-12 rounded-full text-xl',
       },
     },
