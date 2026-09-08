@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import ReminderSummary from '@/components/living/ReminderSummary.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { billsApi } from '@/api/bills.js'
@@ -241,6 +242,8 @@ onBeforeUnmount(invalidateBillRequest)
               </div>
             </CardContent>
           </Card>
+
+          <ReminderSummary v-if="service === 'living'" />
 
           <p
             v-if="service === 'bills' && billSummaryText"
