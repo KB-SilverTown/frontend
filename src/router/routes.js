@@ -63,6 +63,11 @@ export const routes = [
     component: () => import('@/views/BillOcrView.vue'),
   },
   {
+    path: '/bills/:billId/expired',
+    name: 'bill-expired',
+    component: () => import('@/views/BillReviewView.vue'),
+  },
+  {
     path: '/bills/:billId/review/edit',
     name: 'bill-low-confidence',
     component: () => import('@/views/BillReviewView.vue'),

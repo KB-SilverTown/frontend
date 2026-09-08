@@ -26,13 +26,18 @@ const form = reactive({ payee: '', amount: '', dueDate: '' })
 let requestId = 0
 
 const billId = computed(() => String(route.params.billId ?? '').trim())
+const isExpired = computed(() => route.name === 'bill-expired')
 const isLowConfidence = computed(() => route.name === 'bill-low-confidence')
-const headingTitle = computed(() => (isLowConfidence.value ? '낮은 신뢰도 수정' : '납부 내용 확인'))
-const headingDescription = computed(() =>
-  isLowConfidence.value
+const headingTitle = computed(() => {
+  if (isExpired.value) return '확인 정보 만료'
+  return isLowConfidence.value ? '낮은 신뢰도 수정' : '납부 내용 확인'
+})
+const headingDescription = computed(() => {
+  if (isExpired.value) return '오래된 확인 정보는 다시 검토합니다.'
+  return isLowConfidence.value
     ? '확실하지 않은 항목을 직접 확인하고 수정합니다.'
-    : '납부하기 전에 고지서 정보를 확인해 주세요.',
-)
+    : '납부하기 전에 고지서 정보를 확인해 주세요.'
+})
 const presentedBill = computed(() => (bill.value ? presentBill(bill.value) : null))
 
 function extractBill(value) {
@@ -110,8 +115,12 @@ function clearFieldError() {
   notice.value = ''
 }
 
+function confirmationStatus(response) {
+  return String(response?.status ?? '').trim().toUpperCase()
+}
+
 function isUnexpectedConfirmation(response) {
-  const status = String(response?.status ?? '').trim().toUpperCase()
+  const status = confirmationStatus(response)
   return status === 'RECONFIRM' || (status && status !== 'CONFIRMED') || response?.executable === false
 }
 
@@ -130,6 +139,10 @@ async function confirmBill() {
 
   try {
     const response = await withAppLoading(() => billsApi.confirm(billId.value, validation.request))
+    if (confirmationStatus(response) === 'EXPIRED') {
+      await router.replace({ name: 'bill-expired', params: { billId: billId.value } })
+      return
+    }
     if (isUnexpectedConfirmation(response)) {
       if (!isLowConfidence.value) {
         await router.replace({ name: 'bill-low-confidence', params: { billId: billId.value } })
@@ -153,6 +166,11 @@ async function confirmBill() {
   } finally {
     saving.value = false
   }
+}
+
+async function retryExpired() {
+  await router.replace({ name: 'bill-review', params: { billId: billId.value } })
+  await loadBill()
 }
 
 function goBack() {
@@ -215,6 +233,30 @@ onBeforeUnmount(() => {
           >
             다시 불러오기
           </Button>
+        </section>
+        <section
+          v-else-if="isExpired"
+          aria-label="확인 정보 만료 안내"
+          class="bill-review-card bill-review-expired-card"
+        >
+          <section
+            aria-label="만료 안내"
+            class="bill-review-warning"
+          >
+            <span
+              aria-hidden="true"
+              class="bill-review-warning-icon"
+            >
+              ?
+            </span>
+            <div>
+              <strong>확인 시간이 지났어요</strong>
+              <p>최신 납부 정보를 다시 불러옵니다.</p>
+            </div>
+          </section>
+          <p class="bill-review-note">
+            <b>안내</b> 최신 정보를 확인한 뒤 납부 내용 확인을 다시 진행해 주세요.
+          </p>
         </section>
         <section
           v-else-if="presentedBill"
@@ -325,7 +367,15 @@ onBeforeUnmount(() => {
 
       <footer class="app-actions bill-review-actions">
         <Button
-          v-if="errorMessage"
+          v-if="isExpired && !errorMessage"
+          class="w-full"
+          :disabled="saving"
+          @click="retryExpired"
+        >
+          다시 확인
+        </Button>
+        <Button
+          v-else-if="errorMessage"
           class="w-full"
           variant="secondary"
           @click="loadBill"
