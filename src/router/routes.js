@@ -18,6 +18,16 @@ export const routes = [
     component: () => import('@/views/OnboardingView.vue'),
   },
   {
+    path: '/bills',
+    name: 'bills-home',
+    component: () => import('@/views/ServiceHomeView.vue'),
+  },
+  {
+    path: '/living',
+    name: 'living-home',
+    component: () => import('@/views/ServiceHomeView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: { name: 'onboarding', params: { stepId: 'start' } },
   },
