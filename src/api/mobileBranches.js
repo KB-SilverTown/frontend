@@ -10,4 +10,9 @@ export const mobileBranchesApi = {
     const { data } = await apiClient.get('/mobile-branches', { params })
     return data
   },
+
+  async get(branchId) {
+    const { data } = await apiClient.get(`/mobile-branches/${branchId}`)
+    return data
+  },
 }
