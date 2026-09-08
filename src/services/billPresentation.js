@@ -52,6 +52,7 @@ export function billDueDateLabel(bill) {
 
 export function presentBill(bill, index = 0) {
   return {
+    id: billIdentifier(bill),
     key: billIdentifier(bill) || `${billPayee(bill)}-${index}`,
     payee: billPayee(bill),
     amount: billAmount(bill),

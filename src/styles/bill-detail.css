@@ -1,0 +1,124 @@
+.bill-detail-device,
+.bill-detail-device .app-header,
+.bill-detail-device .app-main,
+.bill-detail-device .app-actions {
+  background: var(--card);
+}
+
+.bill-detail-main {
+  padding-top: 22px;
+}
+
+.bill-detail-heading > p {
+  margin-bottom: 22px;
+}
+
+.bill-detail-status,
+.bill-detail-error {
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+}
+
+.bill-detail-status {
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.bill-detail-error {
+  display: grid;
+  gap: 12px;
+  border: 2px solid color-mix(in srgb, var(--destructive) 48%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 9%, var(--card));
+  color: var(--destructive);
+  font-weight: 700;
+}
+
+.bill-detail-error p {
+  margin: 0;
+}
+
+.bill-detail-card {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 16px rgb(23 63 82 / 8%);
+}
+
+.bill-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bill-detail-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.bill-detail-hero strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.bill-detail-hero p {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+}
+
+.bill-detail-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.bill-detail-row {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 13px;
+  border-radius: 12px;
+  background: var(--muted);
+  font-size: var(--font-size-body);
+}
+
+.bill-detail-row span {
+  color: var(--muted-foreground);
+  font-weight: 650;
+}
+
+.bill-detail-row b {
+  text-align: right;
+}
+
+.bill-detail-note {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+}
+
+.bill-detail-note b {
+  color: var(--foreground);
+}
+
+.bill-detail-actions {
+  padding-top: 8px;
+}

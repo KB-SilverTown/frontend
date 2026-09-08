@@ -10,4 +10,9 @@ export const billsApi = {
     const { data } = await apiClient.get('/bills/monthly-summary', { params })
     return data
   },
+
+  async get(billId) {
+    const { data } = await apiClient.get(`/bills/${billId}`)
+    return data
+  },
 }

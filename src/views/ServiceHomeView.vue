@@ -194,10 +194,11 @@ onBeforeUnmount(invalidateBillRequest)
                   aria-label="등록된 고지서"
                   class="service-bill-list"
                 >
-                  <article
+                  <RouterLink
                     v-for="bill in visibleBills"
                     :key="bill.key"
-                    class="service-bill-row"
+                    class="service-bill-row service-bill-link"
+                    :to="{ name: 'bill-detail', params: { billId: bill.id } }"
                   >
                     <div class="service-bill-copy">
                       <strong>{{ bill.payee }}</strong>
@@ -207,7 +208,7 @@ onBeforeUnmount(invalidateBillRequest)
                       <b>{{ bill.amount }}</b>
                       <span>{{ bill.status }}</span>
                     </div>
-                  </article>
+                  </RouterLink>
                 </div>
               </template>
 
@@ -302,7 +303,8 @@ onBeforeUnmount(invalidateBillRequest)
 </template>
 
 <style>
-.service-choice-link {
+.service-choice-link,
+.service-bill-link {
   text-decoration: none;
 }
 
@@ -321,6 +323,11 @@ onBeforeUnmount(invalidateBillRequest)
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card);
+  color: var(--foreground);
+}
+
+.service-bill-link:hover {
+  background: var(--muted);
 }
 
 .service-bill-copy,
