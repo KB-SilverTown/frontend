@@ -176,13 +176,21 @@ onBeforeUnmount(invalidateBillRequest)
                 >
                   고지서 정보를 불러오고 있어요.
                 </p>
-                <p
+                <div
                   v-else-if="billListError"
-                  class="service-home-data-error"
+                  aria-live="polite"
+                  class="service-home-data-error-state"
                   role="alert"
                 >
-                  {{ billListError }}
-                </p>
+                  <p class="service-home-data-error">{{ billListError }}</p>
+                  <Button
+                    :disabled="billLoading"
+                    variant="secondary"
+                    @click="loadBillData"
+                  >
+                    다시 불러오기
+                  </Button>
+                </div>
                 <p
                   v-else-if="!visibleBills.length"
                   class="service-home-data-summary"
@@ -309,6 +317,11 @@ onBeforeUnmount(invalidateBillRequest)
 }
 
 .service-bill-list {
+  display: grid;
+  gap: 10px;
+}
+
+.service-home-data-error-state {
   display: grid;
   gap: 10px;
 }
