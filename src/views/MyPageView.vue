@@ -80,6 +80,17 @@ function goBack() {
             </span>
             <b aria-hidden="true">›</b>
           </RouterLink>
+          <RouterLink
+            aria-label="가입 정보 열기"
+            class="my-page-card"
+            :to="{ name: 'profile' }"
+          >
+            <span>
+              <strong>가입 정보</strong>
+              <small>이름과 연락처를 확인합니다.</small>
+            </span>
+            <b aria-hidden="true">›</b>
+          </RouterLink>
           <button
             :aria-busy="isLoggingOut"
             :aria-label="isLoggingOut ? '로그아웃 중' : '로그아웃'"

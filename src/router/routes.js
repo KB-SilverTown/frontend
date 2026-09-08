@@ -28,6 +28,11 @@ export const routes = [
     component: () => import('@/views/MyPageFontSizeView.vue'),
   },
   {
+    path: '/my-page/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+  },
+  {
     path: '/onboarding/:stepId',
     name: 'onboarding',
     component: () => import('@/views/OnboardingView.vue'),

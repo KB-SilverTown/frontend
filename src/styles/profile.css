@@ -1,0 +1,77 @@
+.profile-device,
+.profile-device .app-header,
+.profile-device .app-main,
+.profile-device .app-actions {
+  background: var(--card);
+}
+
+.profile-main {
+  padding-top: 22px;
+}
+
+.profile-heading > p {
+  margin-bottom: 22px;
+}
+
+.profile-status,
+.profile-error,
+.profile-notice {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.profile-status,
+.profile-notice {
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.profile-error {
+  border: 2px solid color-mix(in srgb, var(--destructive) 48%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 9%, var(--card));
+  color: var(--destructive);
+}
+
+.profile-form {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-field {
+  display: grid;
+  gap: 7px;
+}
+
+.profile-field > span {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  font-weight: 800;
+}
+
+.profile-actions {
+  margin: 4px -24px 0;
+  padding-top: 10px;
+}
+
+.profile-bottom-nav {
+  background: var(--card);
+}
+
+.profile-bottom-nav a {
+  display: grid;
+  min-height: 56px;
+  place-items: center;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: var(--font-size-nav);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.profile-bottom-nav a[aria-current='page'] {
+  color: var(--primary-foreground);
+}
