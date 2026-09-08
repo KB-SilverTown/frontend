@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -76,10 +76,11 @@ function coordinatesFromPosition(position) {
   return { latitude, longitude }
 }
 
-function applyBranches(response, currentRequestId, hint) {
+function applyBranchItems(items, currentRequestId, hint) {
   if (currentRequestId !== requestId) return
 
-  branches.value = mobileBranchItems(response)
+  branches.value = items
+    .filter(Boolean)
     .slice()
     .sort((left, right) => mobileBranchDistanceValue(left) - mobileBranchDistanceValue(right))
 
@@ -88,6 +89,20 @@ function applyBranches(response, currentRequestId, hint) {
     routeId || String(mobileBranchId(branches.value[0]) ?? '').trim() || ''
   locationPermissionDenied.value = false
   locationHint.value = hint
+}
+
+function applyBranches(response, currentRequestId, hint) {
+  applyBranchItems(mobileBranchItems(response), currentRequestId, hint)
+}
+
+function singleBranch(response, fallbackId) {
+  const candidate = response?.branch ?? response?.item ?? response?.data ?? response
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null
+
+  return {
+    ...candidate,
+    branchId: mobileBranchId(candidate) ?? fallbackId,
+  }
 }
 
 async function loadLocationBranches() {
@@ -145,8 +160,60 @@ async function loadRegionBranches() {
   }
 }
 
+async function loadDetailBranch(branchId) {
+  const selectedId = String(branchId ?? '').trim()
+  const currentRequestId = ++requestId
+  lookupMode.value = 'detail'
+  isLoading.value = true
+  errorMessage.value = ''
+  locationHint.value = ''
+  regionError.value = ''
+  branches.value = []
+  selectedBranchId.value = selectedId
+
+  if (!selectedId) {
+    isLoading.value = false
+    errorMessage.value = '확인할 이동점포를 찾지 못했어요.'
+    return
+  }
+
+  try {
+    const response = await mobileBranchesApi.get(selectedId)
+    if (currentRequestId !== requestId) return
+
+    const branch = singleBranch(response, selectedId)
+    if (!branch) throw new Error('선택한 이동점포를 찾지 못했어요.')
+    applyBranchItems([branch], currentRequestId, '')
+  } catch (error) {
+    if (currentRequestId !== requestId) return
+    errorMessage.value = locationErrorMessage(error)
+  } finally {
+    if (currentRequestId === requestId) isLoading.value = false
+  }
+}
+
 function retryLookup() {
-  return lookupMode.value === 'region' ? loadRegionBranches() : loadLocationBranches()
+  if (lookupMode.value === 'region') return loadRegionBranches()
+  if (lookupMode.value === 'detail') return loadDetailBranch(route.params.branchId)
+  return loadLocationBranches()
+}
+
+function handleRouteChange([routeName, branchId]) {
+  const selectedId = String(branchId ?? '').trim()
+  if (routeName === 'mobile-branch-detail') {
+    const existing = branches.value.find(
+      (branch) => String(mobileBranchId(branch) ?? '') === selectedId,
+    )
+    if (selectedId && existing) {
+      selectedBranchId.value = selectedId
+      return
+    }
+    return loadDetailBranch(selectedId)
+  }
+
+  if (routeName === 'mobile-branches' && (lookupMode.value === 'detail' || !branches.value.length)) {
+    return loadLocationBranches()
+  }
 }
 
 function openBranch(branch) {
@@ -165,7 +232,7 @@ function leave() {
   return router.push({ name: 'living-home' })
 }
 
-onMounted(loadLocationBranches)
+watch(() => [route.name, route.params.branchId], handleRouteChange, { immediate: true })
 onBeforeUnmount(() => {
   requestId += 1
 })
@@ -266,8 +333,8 @@ onBeforeUnmount(() => {
           class="mobile-branch-state"
           role="status"
         >
-          <strong>{{ lookupMode === 'region' ? '선택한 지역을 찾고 있어요' : '주변 이동점포를 찾고 있어요' }}</strong>
-          <p>{{ lookupMode === 'region' ? '해당 지역의 운영 정보를 확인하고 있습니다.' : '현재 위치와 운영 정보를 확인하고 있습니다.' }}</p>
+          <strong>{{ lookupMode === 'region' ? '선택한 지역을 찾고 있어요' : lookupMode === 'detail' ? '이동점포 정보를 불러오고 있어요' : '주변 이동점포를 찾고 있어요' }}</strong>
+          <p>{{ lookupMode === 'region' ? '해당 지역의 운영 정보를 확인하고 있습니다.' : lookupMode === 'detail' ? '방문 일정과 가능 업무를 확인하고 있습니다.' : '현재 위치와 운영 정보를 확인하고 있습니다.' }}</p>
         </div>
 
         <template v-else-if="isDetailView">
