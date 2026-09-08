@@ -4,11 +4,15 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { getRestoredSessionRoute } from './router/initialRoute.js'
 import router from './router/index.js'
+import { applyFontScale, readFontScale } from './services/fontScale.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import './styles/globals.css'
 import './styles/app-loading.css'
+import './styles/font-scale.css'
 
 async function bootstrap() {
+  applyFontScale(readFontScale())
+
   const app = createApp(App)
   const pinia = createPinia()
 
