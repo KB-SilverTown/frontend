@@ -133,7 +133,7 @@ function openBillCamera() {
 
       <nav
         aria-label="서비스 메뉴"
-        class="app-bottom-nav service-bottom-nav"
+        class="app-bottom-nav three-items service-bottom-nav"
       >
         <RouterLink
           :aria-current="route.name === 'bills-home' ? 'page' : undefined"
@@ -146,6 +146,12 @@ function openBillCamera() {
           :to="{ name: 'living-home' }"
         >
           생활금융
+        </RouterLink>
+        <RouterLink
+          :aria-current="route.name === 'my-page' ? 'page' : undefined"
+          :to="{ name: 'my-page' }"
+        >
+          마이페이지
         </RouterLink>
       </nav>
     </article>
