@@ -25,6 +25,10 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const locationHint = ref('')
 const selectedBranchId = ref('')
+const region = ref('')
+const regionError = ref('')
+const lookupMode = ref('location')
+const locationPermissionDenied = ref(false)
 let requestId = 0
 
 const isDetailView = computed(() => route.name === 'mobile-branch-detail')
@@ -54,6 +58,15 @@ function locationErrorMessage(error) {
   )
 }
 
+function isLocationPermissionError(error) {
+  return (
+    error?.code === 1 ||
+    error?.name === 'NotAllowedError' ||
+    error?.name === 'SecurityError' ||
+    String(error?.message ?? '').includes('위치 권한')
+  )
+}
+
 function coordinatesFromPosition(position) {
   const latitude = Number(position?.coords?.latitude)
   const longitude = Number(position?.coords?.longitude)
@@ -63,11 +76,29 @@ function coordinatesFromPosition(position) {
   return { latitude, longitude }
 }
 
-async function loadBranches() {
+function applyBranches(response, currentRequestId, hint) {
+  if (currentRequestId !== requestId) return
+
+  branches.value = mobileBranchItems(response)
+    .slice()
+    .sort((left, right) => mobileBranchDistanceValue(left) - mobileBranchDistanceValue(right))
+
+  const routeId = String(route.params.branchId ?? '').trim()
+  selectedBranchId.value =
+    routeId || String(mobileBranchId(branches.value[0]) ?? '').trim() || ''
+  locationPermissionDenied.value = false
+  locationHint.value = hint
+}
+
+async function loadLocationBranches() {
   const currentRequestId = ++requestId
+  lookupMode.value = 'location'
   isLoading.value = true
   errorMessage.value = ''
   locationHint.value = ''
+  regionError.value = ''
+  branches.value = []
+  selectedBranchId.value = ''
 
   try {
     const position = await getCurrentLocation()
@@ -75,22 +106,47 @@ async function loadBranches() {
 
     const params = coordinatesFromPosition(position)
     const response = await mobileBranchesApi.nearby(params)
+    applyBranches(response, currentRequestId, '현재 위치에서 가까운 순서로 보여드려요.')
+  } catch (error) {
     if (currentRequestId !== requestId) return
+    locationPermissionDenied.value = isLocationPermissionError(error)
+    if (locationPermissionDenied.value) lookupMode.value = 'region'
+    errorMessage.value = locationErrorMessage(error)
+  } finally {
+    if (currentRequestId === requestId) isLoading.value = false
+  }
+}
 
-    branches.value = mobileBranchItems(response)
-      .slice()
-      .sort((left, right) => mobileBranchDistanceValue(left) - mobileBranchDistanceValue(right))
+async function loadRegionBranches() {
+  const selectedRegion = region.value.trim()
+  if (!selectedRegion) {
+    regionError.value = '찾을 지역을 입력해 주세요.'
+    return
+  }
 
-    const routeId = String(route.params.branchId ?? '').trim()
-    selectedBranchId.value =
-      routeId || String(mobileBranchId(branches.value[0]) ?? '').trim() || ''
-    locationHint.value = '현재 위치에서 가까운 순서로 보여드려요.'
+  const currentRequestId = ++requestId
+  lookupMode.value = 'region'
+  locationPermissionDenied.value = false
+  isLoading.value = true
+  errorMessage.value = ''
+  locationHint.value = ''
+  regionError.value = ''
+  branches.value = []
+  selectedBranchId.value = ''
+
+  try {
+    const response = await mobileBranchesApi.list({ region: selectedRegion })
+    applyBranches(response, currentRequestId, `${selectedRegion} 기준으로 가까운 순서로 보여드려요.`)
   } catch (error) {
     if (currentRequestId !== requestId) return
     errorMessage.value = locationErrorMessage(error)
   } finally {
     if (currentRequestId === requestId) isLoading.value = false
   }
+}
+
+function retryLookup() {
+  return lookupMode.value === 'region' ? loadRegionBranches() : loadLocationBranches()
 }
 
 function openBranch(branch) {
@@ -109,7 +165,7 @@ function leave() {
   return router.push({ name: 'living-home' })
 }
 
-onMounted(loadBranches)
+onMounted(loadLocationBranches)
 onBeforeUnmount(() => {
   requestId += 1
 })
@@ -142,7 +198,9 @@ onBeforeUnmount(() => {
             {{
               isDetailView
                 ? '방문 일정과 필요한 준비물을 확인해 주세요.'
-                : '현재 위치 주변의 이동점포를 찾아드려요.'
+                : lookupMode === 'region'
+                  ? '지역을 직접 입력해 이동점포를 찾아드려요.'
+                  : '현재 위치 주변의 이동점포를 찾아드려요.'
             }}
           </p>
         </section>
@@ -152,12 +210,51 @@ onBeforeUnmount(() => {
           class="mobile-branch-state mobile-branch-state-error"
           role="alert"
         >
-          <strong>이동점포 정보를 불러오지 못했어요</strong>
+          <strong>{{ locationPermissionDenied ? '현재 위치를 확인할 수 없어요' : '이동점포 정보를 불러오지 못했어요' }}</strong>
           <p>{{ errorMessage }}</p>
+          <form
+            v-if="lookupMode === 'region'"
+            class="mobile-branch-region-form"
+            @submit.prevent="loadRegionBranches"
+          >
+            <label class="mobile-branch-region-field">
+              <span>찾는 지역</span>
+              <input
+                v-model="region"
+                autocomplete="address-level2"
+                maxlength="80"
+                placeholder="예: 서울 성동구"
+                type="text"
+                @input="regionError = ''"
+              />
+            </label>
+            <p
+              v-if="regionError"
+              class="mobile-branch-region-error"
+              role="alert"
+            >
+              {{ regionError }}
+            </p>
+            <Button
+              class="w-full"
+              type="submit"
+            >
+              이 지역에서 찾기
+            </Button>
+            <Button
+              class="w-full"
+              type="button"
+              variant="secondary"
+              @click="loadLocationBranches"
+            >
+              현재 위치로 다시 찾기
+            </Button>
+          </form>
           <Button
+            v-else
             :disabled="isLoading"
             variant="secondary"
-            @click="loadBranches"
+            @click="retryLookup"
           >
             다시 찾기
           </Button>
@@ -169,8 +266,8 @@ onBeforeUnmount(() => {
           class="mobile-branch-state"
           role="status"
         >
-          <strong>주변 이동점포를 찾고 있어요</strong>
-          <p>현재 위치와 운영 정보를 확인하고 있습니다.</p>
+          <strong>{{ lookupMode === 'region' ? '선택한 지역을 찾고 있어요' : '주변 이동점포를 찾고 있어요' }}</strong>
+          <p>{{ lookupMode === 'region' ? '해당 지역의 운영 정보를 확인하고 있습니다.' : '현재 위치와 운영 정보를 확인하고 있습니다.' }}</p>
         </div>
 
         <template v-else-if="isDetailView">
@@ -282,10 +379,10 @@ onBeforeUnmount(() => {
             class="mobile-branch-state"
           >
             <strong>주변에 예정된 이동점포가 없어요</strong>
-            <p>다른 시간에 다시 찾아보면 새로운 일정이 보일 수 있어요.</p>
+            <p>{{ lookupMode === 'region' ? '다른 지역을 입력하거나 잠시 후 다시 찾아보세요.' : '다른 시간에 다시 찾아보면 새로운 일정이 보일 수 있어요.' }}</p>
             <Button
               variant="secondary"
-              @click="loadBranches"
+              @click="retryLookup"
             >
               다시 찾기
             </Button>
