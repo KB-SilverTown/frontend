@@ -60,6 +60,12 @@ function goBack() {
   return router.push({ name: 'bills-home' })
 }
 
+function openReview() {
+  const billId = String(route.params.billId ?? '').trim()
+  if (!billId) return
+  return router.push({ name: 'bill-review', params: { billId } })
+}
+
 function openCamera() {
   return router.push({ name: 'bills-camera' })
 }
@@ -151,6 +157,13 @@ onBeforeUnmount(() => {
       </main>
 
       <footer class="app-actions bill-detail-actions">
+        <Button
+          v-if="presentedBill && !loading && !errorMessage"
+          class="w-full"
+          @click="openReview"
+        >
+          납부 내용 확인
+        </Button>
         <Button
           class="w-full"
           @click="goBack"
