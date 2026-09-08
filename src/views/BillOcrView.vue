@@ -65,7 +65,7 @@ async function processBill() {
     }
 
     clearPendingBillImage()
-    await router.replace({ name: 'bill-detail', params: { billId } })
+    await router.replace({ name: 'bill-review', params: { billId } })
   } catch (error) {
     if (currentRequestId === requestId) errorMessage.value = processErrorMessage(error)
   } finally {
