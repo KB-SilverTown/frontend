@@ -21,7 +21,14 @@ const serviceScreens = {
     description: '계좌·알림·이동점포로 이동합니다.',
     groups: [
       [{ label: '내 계좌', selected: true }, { label: '납부 알림' }],
-      [{ label: '이동점포 정보', selected: true }, { label: '가입 정보' }],
+      [
+        {
+          label: '이동점포 정보',
+          selected: true,
+          to: { name: 'mobile-branches' },
+        },
+        { label: '가입 정보' },
+      ],
     ],
     primaryLabel: '',
   },
@@ -81,15 +88,28 @@ function openBillCamera() {
                 :key="groupIndex"
                 class="service-choice-grid"
               >
-                <div
+                <template
                   v-for="choice in group"
                   :key="choice.label"
-                  class="service-choice"
-                  :class="{ selected: choice.selected }"
                 >
-                  <span>{{ choice.label }}</span>
-                  <b v-if="choice.selected">✓</b>
-                </div>
+                  <RouterLink
+                    v-if="choice.to"
+                    class="service-choice service-choice-link"
+                    :class="{ selected: choice.selected }"
+                    :to="choice.to"
+                  >
+                    <span>{{ choice.label }}</span>
+                    <b v-if="choice.selected">✓</b>
+                  </RouterLink>
+                  <div
+                    v-else
+                    class="service-choice"
+                    :class="{ selected: choice.selected }"
+                  >
+                    <span>{{ choice.label }}</span>
+                    <b v-if="choice.selected">✓</b>
+                  </div>
+                </template>
               </div>
             </CardContent>
           </Card>
@@ -128,3 +148,9 @@ function openBillCamera() {
     </article>
   </div>
 </template>
+
+<style>
+.service-choice-link {
+  text-decoration: none;
+}
+</style>

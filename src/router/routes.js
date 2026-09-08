@@ -38,6 +38,16 @@ export const routes = [
     component: () => import('@/views/ServiceHomeView.vue'),
   },
   {
+    path: '/living/mobile-branches',
+    name: 'mobile-branches',
+    component: () => import('@/views/MobileBranchView.vue'),
+  },
+  {
+    path: '/living/mobile-branches/:branchId',
+    name: 'mobile-branch-detail',
+    component: () => import('@/views/MobileBranchView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: { name: 'onboarding', params: { stepId: 'start' } },
   },
