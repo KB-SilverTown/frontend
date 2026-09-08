@@ -91,6 +91,17 @@ function goBack() {
             </span>
             <b aria-hidden="true">›</b>
           </RouterLink>
+          <RouterLink
+            aria-label="동의 설정 열기"
+            class="my-page-card"
+            :to="{ name: 'consents' }"
+          >
+            <span>
+              <strong>동의 설정</strong>
+              <small>동의한 항목을 확인하고 바꿉니다.</small>
+            </span>
+            <b aria-hidden="true">›</b>
+          </RouterLink>
           <button
             :aria-busy="isLoggingOut"
             :aria-label="isLoggingOut ? '로그아웃 중' : '로그아웃'"
