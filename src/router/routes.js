@@ -48,6 +48,21 @@ export const routes = [
     component: () => import('@/views/MobileBranchView.vue'),
   },
   {
+    path: '/living/reminders',
+    name: 'reminders',
+    component: () => import('@/views/ReminderView.vue'),
+  },
+  {
+    path: '/living/reminders/new',
+    name: 'reminder-create',
+    component: () => import('@/views/ReminderView.vue'),
+  },
+  {
+    path: '/living/reminders/:reminderId/edit',
+    name: 'reminder-edit',
+    component: () => import('@/views/ReminderView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: { name: 'onboarding', params: { stepId: 'start' } },
   },
