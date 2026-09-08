@@ -1,0 +1,143 @@
+.service-home-device,
+.service-home-device .app-header,
+.service-home-device .app-main,
+.service-home-device .app-actions {
+  background: var(--card);
+}
+
+.service-home-main {
+  padding-top: 22px;
+}
+
+.service-home-kicker {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.service-home-heading h1 {
+  margin-bottom: 8px;
+  font-size: 31px;
+}
+
+.service-home-heading > p {
+  margin-bottom: 22px;
+}
+
+.service-home-content {
+  display: grid;
+  gap: 12px;
+}
+
+.service-list-card {
+  border-radius: 18px;
+  box-shadow: 0 5px 14px rgb(23 63 82 / 5%);
+}
+
+.service-list-content {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.service-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.service-choice {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.service-choice.selected {
+  border: 2px solid var(--primary);
+  background: var(--muted);
+  font-weight: 800;
+}
+
+.service-choice b {
+  color: var(--primary-foreground);
+}
+
+.service-home-actions {
+  padding-top: 0;
+}
+
+.service-bottom-nav {
+  background: var(--card);
+}
+
+.service-bottom-nav a {
+  display: grid;
+  place-items: center;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.service-bottom-nav a[aria-current='page'] {
+  color: var(--primary-foreground);
+}
+
+.service-mic-button {
+  border-color: color-mix(in srgb, var(--primary) 70%, var(--border));
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.service-mic-icon {
+  position: relative;
+  width: 21px;
+  height: 24px;
+  display: block;
+}
+
+.service-mic-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 6px;
+  width: 9px;
+  height: 15px;
+  border-radius: 6px;
+  background: currentColor;
+}
+
+.service-mic-icon::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  bottom: 3px;
+  width: 17px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.service-mic-stem {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  width: 2px;
+  height: 5px;
+  background: currentColor;
+}
