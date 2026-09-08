@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
 import { FONT_SCALE, applyFontScale, readFontScale, saveFontScale } from '@/services/fontScale.js'
+import '@/styles/my-page.css'
 
 const route = useRoute()
 const router = useRouter()

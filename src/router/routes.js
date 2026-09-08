@@ -13,8 +13,18 @@ export const routes = [
     component: () => import('@/views/OnboardingHelpView.vue'),
   },
   {
+    path: '/my-page',
+    name: 'my-page',
+    component: () => import('@/views/MyPageView.vue'),
+  },
+  {
     path: '/font-size',
     name: 'font-size',
+    component: () => import('@/views/MyPageFontSizeView.vue'),
+  },
+  {
+    path: '/my-page/font-size',
+    name: 'my-page-font-size',
     component: () => import('@/views/MyPageFontSizeView.vue'),
   },
   {
