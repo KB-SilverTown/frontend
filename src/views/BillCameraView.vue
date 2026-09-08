@@ -1,11 +1,16 @@
 <script setup>
 import { nextTick, onBeforeUnmount, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
 import { captureVideoFrame, photoToBlob, takeBillPhoto } from '@/services/nativeCapabilities.js'
+import {
+  clearPendingBillImage,
+  setPendingBillImage,
+} from '@/services/billCapture.js'
 import '@/styles/bill-camera.css'
 
+const route = useRoute()
 const router = useRouter()
 const billCameraVideo = ref(null)
 const billCameraReady = ref(false)
@@ -16,6 +21,7 @@ const actionError = ref('')
 const actionNotice = ref('')
 let billCameraStream = null
 let billCameraRequestId = 0
+let pendingBillImage = null
 
 function clearBillCameraPreview() {
   const objectUrl = globalThis.URL
@@ -43,12 +49,16 @@ function setBillCameraPreview(image) {
   const objectUrl = globalThis.URL
   if (!image || typeof objectUrl?.createObjectURL !== 'function') return
 
+  pendingBillImage = image
+  setPendingBillImage(image)
   clearBillCameraPreview()
   billCameraPreviewUrl.value = objectUrl.createObjectURL(image)
 }
 
 async function startBillCamera() {
   cleanupBillCamera()
+  pendingBillImage = null
+  clearPendingBillImage()
   sourceSelection.value = false
   actionError.value = ''
   actionNotice.value = ''
@@ -145,8 +155,22 @@ async function captureBillFrame() {
   }
 }
 
+function continueToOcr() {
+  if (!pendingBillImage || !billCameraPreviewUrl.value) {
+    actionError.value = '먼저 고지서 사진을 준비해 주세요.'
+    return
+  }
+
+  setPendingBillImage(pendingBillImage)
+  const voiceSessionId = String(route.query.voiceSessionId ?? '').trim()
+  const query = voiceSessionId ? { voiceSessionId } : undefined
+  return router.push({ name: 'bills-ocr', query })
+}
+
 function selectAnotherPhoto() {
   cleanupBillCamera()
+  pendingBillImage = null
+  clearPendingBillImage()
   sourceSelection.value = true
   actionError.value = ''
   actionNotice.value = ''
@@ -154,6 +178,8 @@ function selectAnotherPhoto() {
 
 function leave() {
   cleanupBillCamera()
+  pendingBillImage = null
+  clearPendingBillImage()
   return router.push({ name: 'bills-home' })
 }
 
@@ -311,19 +337,28 @@ onBeforeUnmount(cleanupBillCamera)
         class="app-actions bill-camera-actions"
       >
         <Button
+          v-if="billCameraPreviewUrl"
+          class="w-full"
+          :disabled="actionBusy"
+          @click="continueToOcr"
+        >
+          다음 단계
+        </Button>
+        <Button
+          v-else
           class="w-full"
           :disabled="actionBusy"
           @click="captureBillFrame"
         >
-          {{ billCameraPreviewUrl ? '사진 다시 촬영' : '사진 촬영' }}
+          사진 촬영
         </Button>
         <Button
           class="w-full"
           :disabled="actionBusy"
           variant="secondary"
-          @click="selectAnotherPhoto"
+          @click="billCameraPreviewUrl ? uploadBill('camera') : selectAnotherPhoto()"
         >
-          다른 사진 선택
+          {{ billCameraPreviewUrl ? '사진 다시 촬영' : '다른 사진 선택' }}
         </Button>
       </footer>
     </article>
