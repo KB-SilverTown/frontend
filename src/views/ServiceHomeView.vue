@@ -1,12 +1,13 @@
 <script setup>
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import '@/styles/service.css'
 
 const route = useRoute()
+const router = useRouter()
 
 const serviceScreens = {
   bills: {
@@ -31,6 +32,10 @@ const screen = computed(() => serviceScreens[service.value])
 
 function startVoiceAssist() {
   window.dispatchEvent(new CustomEvent('gwipyeonhan:voice-transfer'))
+}
+
+function openBillCamera() {
+  return router.push({ name: 'bills-camera' })
 }
 </script>
 
@@ -95,7 +100,12 @@ function startVoiceAssist() {
         v-if="screen.primaryLabel"
         class="app-actions service-home-actions"
       >
-        <Button class="w-full">{{ screen.primaryLabel }}</Button>
+        <Button
+          class="w-full"
+          @click="openBillCamera"
+        >
+          {{ screen.primaryLabel }}
+        </Button>
       </footer>
 
       <nav
