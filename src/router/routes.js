@@ -28,6 +28,11 @@ export const routes = [
     component: () => import('@/views/ServiceHomeView.vue'),
   },
   {
+    path: '/bills/camera',
+    name: 'bills-camera',
+    component: () => import('@/views/BillCameraView.vue'),
+  },
+  {
     path: '/living',
     name: 'living-home',
     component: () => import('@/views/ServiceHomeView.vue'),
