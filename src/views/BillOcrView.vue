@@ -19,6 +19,13 @@ const image = ref(getPendingBillImage())
 let requestId = 0
 
 const voiceSessionId = computed(() => String(route.query.voiceSessionId ?? '').trim())
+const isRecognitionFailed = computed(() => route.name === 'bill-recognition-failed')
+const headingTitle = computed(() => (isRecognitionFailed.value ? '인식 실패' : '고지서 읽기'))
+const headingDescription = computed(() =>
+  isRecognitionFailed.value
+    ? '다시 촬영하거나 다른 사진을 선택할 수 있어요.'
+    : '사진을 안전하게 확인하고 고지서 정보를 읽고 있어요.',
+)
 
 function responseBillId(response) {
   const bill = response?.bill ?? response?.data?.bill ?? response?.data ?? response
@@ -31,6 +38,13 @@ function processErrorMessage(error) {
     error?.message ||
     '고지서를 읽지 못했어요. 사진을 다시 준비해 주세요.'
   )
+}
+
+async function showRecognitionFailure(message) {
+  errorMessage.value = message
+  if (!isRecognitionFailed.value) {
+    await router.replace({ name: 'bill-recognition-failed', query: route.query })
+  }
 }
 
 async function processBill() {
@@ -60,14 +74,14 @@ async function processBill() {
 
     const billId = responseBillId(response)
     if (!billId) {
-      errorMessage.value = '고지서를 읽었지만 확인할 식별자를 받지 못했어요.'
+      await showRecognitionFailure('고지서를 읽었지만 확인할 식별자를 받지 못했어요.')
       return
     }
 
     clearPendingBillImage()
     await router.replace({ name: 'bill-review', params: { billId } })
   } catch (error) {
-    if (currentRequestId === requestId) errorMessage.value = processErrorMessage(error)
+    if (currentRequestId === requestId) await showRecognitionFailure(processErrorMessage(error))
   } finally {
     if (currentRequestId === requestId) loading.value = false
   }
@@ -112,8 +126,8 @@ onBeforeUnmount(() => {
 
       <main class="app-main bill-ocr-main">
         <section class="screen-heading bill-ocr-heading">
-          <h1>고지서 읽기</h1>
-          <p>사진을 안전하게 확인하고 고지서 정보를 읽고 있어요.</p>
+          <h1>{{ headingTitle }}</h1>
+          <p>{{ headingDescription }}</p>
         </section>
 
         <section
@@ -130,21 +144,50 @@ onBeforeUnmount(() => {
           class="bill-ocr-state bill-ocr-state-error"
           role="alert"
         >
-          <strong>고지서를 처리하지 못했어요</strong>
-          <p>{{ errorMessage }}</p>
-          <Button
-            v-if="voiceSessionId && image"
-            variant="secondary"
-            @click="processBill"
+          <div
+            v-if="isRecognitionFailed"
+            class="bill-ocr-failure-hero"
           >
-            다시 읽기
-          </Button>
-          <Button
-            variant="secondary"
-            @click="backToCamera"
+            <span
+              aria-hidden="true"
+              class="bill-ocr-failure-icon"
+            >
+              !
+            </span>
+            <div>
+              <strong>내용을 읽지 못했어요</strong>
+              <p>사진이 흐리거나 잘리지 않았는지 확인해 주세요.</p>
+            </div>
+          </div>
+          <template v-else>
+            <strong>고지서를 처리하지 못했어요</strong>
+            <p>{{ errorMessage }}</p>
+          </template>
+          <p
+            v-if="isRecognitionFailed"
+            class="bill-ocr-failure-detail"
           >
-            촬영 화면으로 돌아가기
-          </Button>
+            {{ errorMessage }}
+          </p>
+          <div class="bill-ocr-failure-actions">
+            <Button
+              v-if="isRecognitionFailed && voiceSessionId && image"
+              @click="processBill"
+            >
+              같은 사진으로 다시 읽기
+            </Button>
+            <Button
+              @click="backToCamera"
+            >
+              다시 촬영
+            </Button>
+            <Button
+              variant="secondary"
+              @click="backToCamera"
+            >
+              다른 사진 선택
+            </Button>
+          </div>
         </section>
         <section
           v-else

@@ -34,6 +34,44 @@
   background: color-mix(in srgb, var(--destructive) 8%, var(--card));
 }
 
+.bill-ocr-failure-hero {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.bill-ocr-failure-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--destructive);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.bill-ocr-failure-hero strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.bill-ocr-failure-hero p {
+  margin-top: 4px;
+}
+
+.bill-ocr-failure-detail {
+  padding-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--destructive) 26%, var(--border));
+}
+
+.bill-ocr-failure-actions {
+  display: grid;
+  gap: 10px;
+}
+
 .bill-ocr-actions {
   padding-top: 0;
 }
