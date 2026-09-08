@@ -22,10 +22,11 @@
   font-size: var(--font-size-body);
 }
 
-.onboarding-device .app-actions button {
+.app-actions button {
   font-size: var(--font-size-action);
 }
 
+.app-bottom-nav a,
 .app-bottom-nav button {
   font-size: var(--font-size-nav);
 }
