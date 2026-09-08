@@ -7,13 +7,29 @@
 }
 
 .bill-camera-error {
+  display: grid;
+  gap: 8px;
   margin: 0 0 16px;
-  padding: 12px 14px;
+  padding: 13px 14px;
   border: 2px solid var(--destructive);
   border-radius: 12px;
   background: color-mix(in srgb, var(--destructive) 10%, var(--card));
   color: var(--destructive);
-  font-weight: 750;
+  font-size: var(--font-size-body, 1rem);
+  line-height: 1.45;
+}
+
+.bill-camera-error strong {
+  font-size: var(--font-size-body, 1rem);
+  font-weight: 850;
+}
+
+.bill-camera-error p {
+  margin: 0;
+}
+
+.bill-camera-error-hint {
+  color: var(--muted-foreground);
 }
 
 .bill-camera-hero {
@@ -141,6 +157,26 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.bill-camera-pdf-preview {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+  color: #fff;
+}
+
+.bill-camera-pdf-preview > strong {
+  padding: 11px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 26px;
+  letter-spacing: 0.06em;
+}
+
+.bill-camera-pdf-preview .bill-camera-status {
+  position: static;
 }
 
 .bill-camera-viewfinder .vf-corner,

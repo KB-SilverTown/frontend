@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import {
   clearPendingBillImage,
   setPendingBillImage,
 } from '@/services/billCapture.js'
+import { isPdfBillFile, validateBillFile } from '@/services/billFileValidation.js'
 import '@/styles/bill-camera.css'
 
 const route = useRoute()
@@ -15,13 +16,22 @@ const router = useRouter()
 const billCameraVideo = ref(null)
 const billCameraReady = ref(false)
 const billCameraPreviewUrl = ref('')
+const billCameraPreviewType = ref('')
 const sourceSelection = ref(true)
 const actionBusy = ref(false)
 const actionError = ref('')
+const actionErrorCode = ref('')
 const actionNotice = ref('')
 let billCameraStream = null
 let billCameraRequestId = 0
 let pendingBillImage = null
+
+const actionErrorTitle = computed(() => {
+  if (actionErrorCode.value === 'UNSUPPORTED_BILL_FILE') return '파일을 올릴 수 없어요'
+  if (actionErrorCode.value === 'BILL_FILE_TOO_LARGE') return '파일이 너무 커요'
+  if (actionErrorCode.value === 'CAMERA_PERMISSION') return '카메라 권한이 필요해요'
+  return '고지서 사진을 준비하지 못했어요'
+})
 
 function clearBillCameraPreview() {
   const objectUrl = globalThis.URL
@@ -29,6 +39,7 @@ function clearBillCameraPreview() {
     objectUrl.revokeObjectURL(billCameraPreviewUrl.value)
   }
   billCameraPreviewUrl.value = ''
+  billCameraPreviewType.value = ''
 }
 
 function stopBillCamera() {
@@ -52,6 +63,7 @@ function setBillCameraPreview(image) {
   pendingBillImage = image
   setPendingBillImage(image)
   clearBillCameraPreview()
+  billCameraPreviewType.value = String(image.type ?? '').trim().toLowerCase()
   billCameraPreviewUrl.value = objectUrl.createObjectURL(image)
 }
 
@@ -61,6 +73,7 @@ async function startBillCamera() {
   clearPendingBillImage()
   sourceSelection.value = false
   actionError.value = ''
+  actionErrorCode.value = ''
   actionNotice.value = ''
   await nextTick()
 
@@ -103,10 +116,11 @@ async function startBillCamera() {
     if (requestId !== billCameraRequestId) return
 
     stopBillCamera()
-    actionError.value =
-      error?.name === 'NotAllowedError' || error?.name === 'SecurityError'
-        ? '카메라 권한을 허용해 주세요. 촬영 버튼을 누르면 다시 시도할 수 있어요.'
-        : '카메라 미리보기를 준비하지 못했어요. 촬영 버튼을 눌러 다시 시도해 주세요.'
+    const permissionDenied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError'
+    actionErrorCode.value = permissionDenied ? 'CAMERA_PERMISSION' : ''
+    actionError.value = permissionDenied
+      ? '카메라 권한을 허용해 주세요. 촬영 버튼을 누르면 다시 시도할 수 있어요.'
+      : '카메라 미리보기를 준비하지 못했어요. 촬영 버튼을 눌러 다시 시도해 주세요.'
   }
 }
 
@@ -115,6 +129,7 @@ async function setPhotoPreview(source, capturedImage = null) {
   const image = capturedImage ?? (await photoToBlob(photo))
   if (!image) throw new Error('사진을 읽을 수 없어요. 다시 촬영해 주세요.')
 
+  validateBillFile(image)
   setBillCameraPreview(image)
   stopBillCamera()
   sourceSelection.value = false
@@ -124,12 +139,14 @@ async function setPhotoPreview(source, capturedImage = null) {
 async function uploadBill(source, capturedImage = null) {
   actionBusy.value = true
   actionError.value = ''
+  actionErrorCode.value = ''
   actionNotice.value = ''
 
   try {
     await setPhotoPreview(source, capturedImage)
   } catch (error) {
     if (!String(error?.message || '').toLowerCase().includes('cancel')) {
+      actionErrorCode.value = error?.code || ''
       actionError.value = error?.message || '고지서 사진을 준비하지 못했어요. 다시 시도해 주세요.'
     }
   } finally {
@@ -157,6 +174,7 @@ async function captureBillFrame() {
 
 function continueToOcr() {
   if (!pendingBillImage || !billCameraPreviewUrl.value) {
+    actionErrorCode.value = ''
     actionError.value = '먼저 고지서 사진을 준비해 주세요.'
     return
   }
@@ -173,6 +191,7 @@ function selectAnotherPhoto() {
   clearPendingBillImage()
   sourceSelection.value = true
   actionError.value = ''
+  actionErrorCode.value = ''
   actionNotice.value = ''
 }
 
@@ -212,13 +231,15 @@ onBeforeUnmount(cleanupBillCamera)
           <p>고지서를 화면 안에 맞춰 주세요. 빛 반사를 피하면 더 정확해요.</p>
         </section>
 
-        <div
+        <section
           v-if="actionError"
           class="bill-camera-error"
           role="alert"
         >
-          {{ actionError }}
-        </div>
+          <strong>{{ actionErrorTitle }}</strong>
+          <p>{{ actionError }}</p>
+          <p class="bill-camera-error-hint">JPG·PNG·PDF, 20MB 이하 파일을 사용할 수 있어요.</p>
+        </section>
 
         <section
           v-if="sourceSelection"
@@ -277,7 +298,15 @@ onBeforeUnmount(cleanupBillCamera)
               aria-live="polite"
               class="bill-camera-preview"
             >
+              <div
+                v-if="isPdfBillFile({ type: billCameraPreviewType })"
+                class="bill-camera-pdf-preview"
+              >
+                <strong aria-hidden="true">PDF</strong>
+                <p class="bill-camera-status" role="status">PDF 파일을 준비했어요.</p>
+              </div>
               <img
+                v-else
                 alt="촬영한 고지서 미리보기"
                 :src="billCameraPreviewUrl"
               />
