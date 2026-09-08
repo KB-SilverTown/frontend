@@ -78,13 +78,15 @@ function readWebSession() {
   return session
 }
 
-export async function loadAuthSession() {
+export async function loadAuthSession(options = {}) {
+  const includeExpired = options?.includeExpired === true
+
   if (!memorySession) {
     memorySession = isNativePlatform() ? await readNativeSession() : readWebSession()
   }
   if (!memorySession) return null
 
-  if (isExpiredSession(memorySession)) {
+  if (!includeExpired && isExpiredSession(memorySession)) {
     await clearAuthSession().catch(() => {})
     return null
   }
