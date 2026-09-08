@@ -20,7 +20,10 @@ const serviceScreens = {
     title: '내 정보',
     description: '계좌·알림·이동점포로 이동합니다.',
     groups: [
-      [{ label: '내 계좌', selected: true }, { label: '납부 알림' }],
+      [
+        { label: '내 계좌', selected: true },
+        { label: '납부 알림', to: { name: 'reminders' } },
+      ],
       [
         {
           label: '이동점포 정보',
