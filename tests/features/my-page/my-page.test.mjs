@@ -8,6 +8,7 @@ const readSource = createSourceReader(import.meta.url)
 
 const myPageSource = readSource('../../../src/features/my-page/pages/MyPagePage.vue')
 const fontSizeSource = readSource('../../../src/features/my-page/pages/FontSizePage.vue')
+const profilePageSource = readSource('../../../src/features/my-page/pages/ProfilePage.vue')
 const transferHomeSource = readSource('../../../src/features/transfer/pages/TransferHomePage.vue')
 const transferPinSource = readSource('../../../src/features/transfer/pages/TransferPinPage.vue')
 const serviceHomeSource = readSource('../../../src/app/pages/ServiceHomePage.vue')
@@ -25,9 +26,12 @@ test('my page has a production route and view', () => {
   const myPageRoute = routes.find(({ name }) => name === 'my-page')
   const fontSizeRoute = routes.find(({ name }) => name === 'my-page-font-size')
   const voiceSettingsRoute = routes.find(({ name }) => name === 'my-page-voice')
+  const profileRoute = routes.find(({ name }) => name === 'my-page-profile')
 
   assert.equal(myPageRoute?.path, '/mypage')
   assert.equal(typeof myPageRoute?.component, 'function')
+  assert.equal(profileRoute?.path, '/mypage/profile')
+  assert.equal(typeof profileRoute?.component, 'function')
   assert.equal(fontSizeRoute?.path, '/mypage/font-size')
   assert.equal(typeof fontSizeRoute?.component, 'function')
   assert.equal(voiceSettingsRoute?.path, '/mypage/voice/:screenKey')
@@ -38,10 +42,13 @@ test('my page has a production route and view', () => {
 
 test('my page exposes cards and moves font size controls to a detail screen', () => {
   assert.match(myPageSource, /가입 정보/)
-  assert.match(myPageSource, /screenKey: 'living-profile-edit'/)
+  assert.match(myPageSource, /name: 'my-page-profile'/)
   assert.match(myPageSource, /my-page-font-size/)
   assert.match(myPageSource, /글씨 크기/)
 
+  assert.match(profilePageSource, /profileApi\.get/)
+  assert.match(profilePageSource, /profileRows/)
+  assert.match(profilePageSource, /가입 정보/)
   assert.match(fontSizeSource, /readFontScale/)
   assert.match(fontSizeSource, /saveFontScale/)
   assert.match(fontSizeSource, /applyFontScale/)
@@ -82,7 +89,7 @@ test('production choices do not show onboarding selection indicators', () => {
 
 test('living home moves the membership card to my page', () => {
   assert.doesNotMatch(serviceHomeSource, /label: '가입 정보'/)
-  assert.match(myPageSource, /screenKey: 'living-profile-edit'/)
+  assert.match(myPageSource, /name: 'my-page-profile'/)
 })
 
 test('font size setting remains backed by the shared service', () => {

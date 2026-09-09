@@ -20,14 +20,14 @@ test('profile rows expose the current user fields returned by GET /users/me', ()
   )
 })
 
-const livingStatusPageSource = readFileSync(
-  new URL('../../../src/features/living/pages/LivingStatusPage.vue', import.meta.url),
+const profilePageSource = readFileSync(
+  new URL('../../../src/features/my-page/pages/ProfilePage.vue', import.meta.url),
   'utf8',
 )
 
-test('profile edit route directs users to the my page', () => {
-  assert.match(
-    livingStatusPageSource,
-    /'living-profile-edit': \['내 정보 고치기', '내 정보는 마이페이지에서 확인합니다\.', 'my-page'\]/,
-  )
+test('profile page loads membership information with loading and error states', () => {
+  assert.match(profilePageSource, /profileApi\.get/)
+  assert.match(profilePageSource, /profileRows/)
+  assert.match(profilePageSource, /가입 정보를 불러오고 있어요/)
+  assert.match(profilePageSource, /v-else-if="error"/)
 })

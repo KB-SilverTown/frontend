@@ -74,10 +74,7 @@ async function handleLogout() {
           <RouterLink
             aria-label="가입 정보 열기"
             class="my-page-card"
-            :to="{
-              name: 'living-screen',
-              params: { screenKey: 'living-profile-edit' },
-            }"
+            :to="{ name: 'my-page-profile' }"
           >
             <span>
               <strong>가입 정보</strong>

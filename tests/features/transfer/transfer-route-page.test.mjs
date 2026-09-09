@@ -26,10 +26,6 @@ const transferShell = readFileSync(
   new URL('../../../src/features/transfer/components/TransferPageShell.vue', import.meta.url),
   'utf8',
 )
-const statusPage = readFileSync(
-  new URL('../../../src/features/transfer/pages/TransferStatusPage.vue', import.meta.url),
-  'utf8',
-)
 test('transfer routes canonicalize every design id and reject unknown screens', () => {
   for (let number = 2; number <= 31; number += 1) {
     const target = route?.beforeEnter?.({
@@ -85,5 +81,12 @@ test('transfer keeps action buttons in the body and returns home from every back
   for (const page of [flowPage, schedulePage, statusPage]) {
     assert.match(page, /@back="router\.push\(\{ name: 'transfer-home' \}\)"/)
     assert.doesNotMatch(page, /goBackOrReplace/)
+  }
+})
+
+test('transfer clears draft values only when it leaves the transfer flow', () => {
+  for (const page of [flowPage, statusPage]) {
+    assert.match(page, /onBeforeRouteLeave/)
+    assert.match(page, /if \(to\.name !== 'transfer-screen'\) \{\s*transfer\.reset\(\)/)
   }
 })
