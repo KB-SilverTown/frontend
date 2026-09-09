@@ -43,6 +43,16 @@ export const routes = [
     component: () => import('@/views/OnboardingView.vue'),
   },
   {
+    path: '/transfer',
+    name: 'transfer-home',
+    component: () => import('@/views/TransferView.vue'),
+  },
+  {
+    path: '/transfer/flow',
+    name: 'transfer-flow',
+    component: () => import('@/views/TransferFlowView.vue'),
+  },
+  {
     path: '/bills',
     name: 'bills-home',
     component: () => import('@/views/ServiceHomeView.vue'),
