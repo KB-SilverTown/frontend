@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
-import { goBackOrReplace } from '@/shared/lib/navigation.js'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
 const route = useRoute()
@@ -73,7 +72,7 @@ function primary() {
 function secondary() {
   if (editing.value && plans.removePlan(editId.value))
     return router.push(routeTo('transfer-scheduled-list'))
-  return goBackOrReplace(router, { name: 'transfer-home' })
+  return router.push({ name: 'transfer-home' })
 }
 watch(
   [() => props.screenKey, editId],
@@ -100,7 +99,7 @@ watch(
       form ? '저장' : screenKey === 'transfer-scheduled-due' ? '송금하기' : '보낼 돈 정하기'
     "
     :secondary-label="editing ? '삭제' : ''"
-    @back="goBackOrReplace(router, { name: 'transfer-home' })"
+    @back="router.push({ name: 'transfer-home' })"
     @primary="primary"
     @secondary="secondary"
     ><template #error>{{ error }}</template>

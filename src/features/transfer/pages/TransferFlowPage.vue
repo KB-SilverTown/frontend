@@ -6,7 +6,6 @@ import TransferPageShell from '@/features/transfer/components/TransferPageShell.
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
-import { goBackOrReplace } from '@/shared/lib/navigation.js'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
 const router = useRouter()
@@ -197,7 +196,7 @@ async function secondary() {
     transfer.transferId
   )
     await transfer.cancel().catch(() => {})
-  return goBackOrReplace(router, { name: 'transfer-home' })
+  return router.push({ name: 'transfer-home' })
 }
 watch(
   () => props.screenKey,
@@ -229,7 +228,7 @@ watch(
         : ''
     "
     :busy="busy || transfer.busy"
-    @back="goBackOrReplace(router, { name: 'transfer-home' })"
+    @back="router.push({ name: 'transfer-home' })"
     @primary="primary"
     @secondary="secondary"
     ><template #error>{{ error }}</template
