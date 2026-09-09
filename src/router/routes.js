@@ -68,6 +68,11 @@ export const routes = [
     component: () => import('@/views/BillCancelledView.vue'),
   },
   {
+    path: '/bills/unsupported-format',
+    name: 'bill-unsupported-format',
+    component: () => import('@/views/BillUnsupportedFormatView.vue'),
+  },
+  {
     path: '/bills/:billId/payment-number',
     name: 'bill-payment-number',
     component: () => import('@/views/BillPaymentNumberView.vue'),

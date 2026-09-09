@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { Button } from '@/components/ui/button'
@@ -145,6 +145,14 @@ async function uploadBill(source, capturedImage = null) {
   try {
     await setPhotoPreview(source, capturedImage)
   } catch (error) {
+    if (error?.code === 'UNSUPPORTED_BILL_FILE') {
+      cleanupBillCamera()
+      pendingBillImage = null
+      clearPendingBillImage()
+      await router.replace({ name: 'bill-unsupported-format', query: route.query })
+      return
+    }
+
     if (!String(error?.message || '').toLowerCase().includes('cancel')) {
       actionErrorCode.value = error?.code || ''
       actionError.value = error?.message || '고지서 사진을 준비하지 못했어요. 다시 시도해 주세요.'
@@ -202,6 +210,9 @@ function leave() {
   return router.push({ name: 'bill-cancelled' })
 }
 
+onMounted(() => {
+  if (route.query.source === 'camera') startBillCamera()
+})
 onBeforeUnmount(cleanupBillCamera)
 </script>
 
