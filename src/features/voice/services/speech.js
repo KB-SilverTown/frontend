@@ -194,7 +194,9 @@ export async function speak(text, settings = {}) {
 
   if (hasSpeechCredential(settings.speechCredential)) {
     try {
-      return await speakSsmlWithAzure(ssmlFor(content, settings), settings.speechCredential)
+      return await speakSsmlWithAzure(ssmlFor(content, settings), settings.speechCredential, {
+        eqPreset: settings.eqPreset,
+      })
     } catch {
       // 토큰 만료·네트워크 실패로 Azure가 안 되면 브라우저 음성으로 읽어준다.
     }
@@ -225,10 +227,10 @@ export async function speak(text, settings = {}) {
       resolve(result)
     }
 
-    utterance.onend = () => finish({ spoken: true, reason: null })
+    utterance.onend = () => finish({ spoken: true, reason: null, fallback: true })
     utterance.onerror = (event) => {
       const stopped = event?.error === 'interrupted' || event?.error === 'canceled'
-      finish({ spoken: false, reason: stopped ? 'STOPPED' : 'PLAYBACK_FAILED' })
+      finish({ spoken: false, reason: stopped ? 'STOPPED' : 'PLAYBACK_FAILED', fallback: true })
     }
 
     synthesis().speak(utterance)
