@@ -1,0 +1,91 @@
+.bill-file-too-large-device,
+.bill-file-too-large-device .app-header,
+.bill-file-too-large-device .app-main,
+.bill-file-too-large-device .app-actions {
+  background: var(--card);
+}
+
+.bill-file-too-large-main {
+  padding-top: 22px;
+}
+
+.bill-file-too-large-heading > p {
+  margin-bottom: 18px;
+}
+
+.bill-file-too-large-card {
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+  border: 2px solid color-mix(in srgb, var(--destructive) 48%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--destructive) 7%, var(--card));
+  box-shadow: 0 6px 16px rgb(23 63 82 / 8%);
+}
+
+.bill-file-too-large-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--destructive) 25%, var(--border));
+}
+
+.bill-file-too-large-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.bill-file-too-large-hero strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.bill-file-too-large-hero p,
+.bill-file-too-large-note {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+}
+
+.bill-file-too-large-value {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 13px;
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.bill-file-too-large-value dt {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  font-weight: 750;
+}
+
+.bill-file-too-large-value dd {
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.bill-file-too-large-note {
+  margin: 0;
+}
+
+.bill-file-too-large-note b {
+  color: var(--foreground);
+}
+
+.bill-file-too-large-actions {
+  padding-top: 8px;
+}

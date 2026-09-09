@@ -73,6 +73,11 @@ export const routes = [
     component: () => import('@/views/BillUnsupportedFormatView.vue'),
   },
   {
+    path: '/bills/file-too-large',
+    name: 'bill-file-too-large',
+    component: () => import('@/views/BillFileTooLargeView.vue'),
+  },
+  {
     path: '/bills/:billId/payment-number',
     name: 'bill-payment-number',
     component: () => import('@/views/BillPaymentNumberView.vue'),
