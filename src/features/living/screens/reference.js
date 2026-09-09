@@ -13,7 +13,7 @@ export default [
   },
   {
     key: 'living-accounts',
-    title: '계좌 목록',
+    title: '내 계좌',
     description: '잔액·사용 가능 금액·출금 계좌를 봅니다.',
     contentHtml:
       '<section class="hero "><div class="hero-icon">✓</div><div><strong>신한은행 · 1234</strong><p>잔액 1,240,000원</p></div></section><div class="meta"><span>사용 가능</span><strong>1,180,000원</strong></div><div class="choices"><div class="choice active"><span>출금 계좌로 선택</span><i>✓</i></div><div class="choice "><span>다른 계좌 보기</span><i></i></div></div>',

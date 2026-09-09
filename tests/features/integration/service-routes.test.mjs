@@ -440,6 +440,19 @@ test('transfer account selection exposes loading, empty, error, and retry states
   assert.match(routeViewSource, /등록된 계좌가 없어요\./)
 })
 
+test('living account screen shows only one account while transfer selection keeps all accounts', () => {
+  assert.match(
+    routeViewComposableSource,
+    /serviceData\.accounts\.slice\(0, 1\)\.map\(\(account\) =>/,
+  )
+  assert.match(routeViewSource, /!isAccountScreen/)
+  assert.match(routeViewComposableSource, /accounts: '내 계좌'/)
+  assert.match(
+    routeViewPageSource,
+    /screenKey === 'transfer-account-select'[\s\S]*?v-for="account in serviceData\.accounts"/,
+  )
+})
+
 test('production buttons use senior-readable size and weight', () => {
   const buttonBlock = serviceStyleSource.match(
     /\.transfer-device button,\s*\.service-home-device button,\s*\.service-route-device button\s*\{([\s\S]*?)\}/,

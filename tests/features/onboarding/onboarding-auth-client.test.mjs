@@ -36,9 +36,11 @@ test('API client sends the stored access token only to protected requests', asyn
 
   try {
     const protectedResponse = await apiClient.get('/users/me')
+    assert.equal(protectedResponse.config.headers.Accept, 'application/json')
     assert.equal(protectedResponse.config.headers.Authorization, 'Bearer access-token')
 
     const publicResponse = await apiClient.post('/auth/login', {})
+    assert.equal(publicResponse.config.headers.Accept, 'application/json')
     assert.equal(publicResponse.config.headers.Authorization, undefined)
   } finally {
     apiClient.defaults.adapter = originalAdapter

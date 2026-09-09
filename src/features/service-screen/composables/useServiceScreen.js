@@ -190,6 +190,13 @@ export function useServiceScreen() {
     () => service.value === 'living' && screenKey.value === 'living-profile-edit',
   )
   const profileRows = computed(() => presentProfileRows(profile.value || {}))
+  const isAccountScreen = computed(
+    () =>
+      service.value === 'living' &&
+      ['living-accounts', 'living-accounts-empty', 'living-accounts-error'].includes(
+        screenKey.value,
+      ),
+  )
   const mobileBranchLocationError = ref('')
   const mobileBranchLocationLoading = ref(false)
   const selectedMobileBranchId = ref('')
@@ -263,7 +270,7 @@ export function useServiceScreen() {
     if (isBillSuccessScreen.value) return '납부 결과'
 
     const titles = {
-      accounts: '내 계좌에서 불러온 정보',
+      accounts: '내 계좌',
       bill: '고지서 인식 결과',
     }
     return titles[liveKind.value] || ''
@@ -280,7 +287,7 @@ export function useServiceScreen() {
 
   const liveRows = computed(() => {
     if (liveKind.value === 'accounts') {
-      return serviceData.accounts.map((account) => ({
+      return serviceData.accounts.slice(0, 1).map((account) => ({
         label: account.accountName || account.accountType || '계좌',
         value: account.accountNumberMasked || formatCurrency(account.balance),
       }))
@@ -1853,6 +1860,7 @@ export function useServiceScreen() {
     isMobileBranchScreen,
     isProfileEditScreen,
     profileRows,
+    isAccountScreen,
     mobileBranchLocationError,
     mobileBranchLocationLoading,
     selectedMobileBranchId,

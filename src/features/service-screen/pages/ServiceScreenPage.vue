@@ -65,6 +65,7 @@ const {
   isProfileEditScreen,
   profileRows,
   profileLoading,
+  isAccountScreen,
   profileError,
   mobileBranchLocationError,
   mobileBranchLocationLoading,
@@ -306,6 +307,7 @@ const {
             !isVoiceSettingsPreviewScreen &&
             !isMobileBranchScreen &&
             !isProfileEditScreen &&
+            !isAccountScreen &&
             !isReminderScreen &&
             !showVoiceControl &&
             !showTransferFlow
