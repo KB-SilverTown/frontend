@@ -499,6 +499,31 @@ test('voice stream times out when STOP_ACK never arrives', async () => {
   await stream.close()
 })
 
+test('voice stream stops waiting when TURN_RESPONSE never arrives after STOP_ACK', async () => {
+  resetSockets()
+  const errors = []
+  const stream = await openVoiceStream({
+    sessionId: 'session-1',
+    ticket: 'ticket',
+    turnResponseTimeoutMs: 10,
+    WebSocketClass: FakeWebSocket,
+    onError: (error) => errors.push(error),
+  })
+  const socket = FakeWebSocket.instances[0]
+  socket.open()
+  const startPromise = stream.start('input-1')
+  socket.receive({ type: 'START_ACK', inputTurnId: 'input-1', nextSequence: 0 })
+  await startPromise
+
+  stream.stop('input-1')
+  socket.receive({ type: 'STOP_ACK', inputTurnId: 'input-1' })
+  await new Promise((resolve) => setTimeout(resolve, 25))
+
+  assert.equal(stream.getState().turnOpen, false)
+  assert.equal(errors.at(-1).code, 'VOICE_STREAM_RESPONSE_TIMEOUT')
+  await stream.close()
+})
+
 test('voice stream resumes after STOP_ACK while waiting for TURN_RESPONSE', async () => {
   resetSockets()
   const stream = await openVoiceStream({
