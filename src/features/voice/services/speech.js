@@ -17,10 +17,12 @@ import {
  * - ttsVoice: ko-KR-JiMinNeural | ko-KR-GookMinNeural
  * - speechRateMultiplier: 0.90 ~ 1.20
  * - volumeMultiplier: 1.00 ~ 1.20 (Web Speech volume 상한이 1.0이라 재생 시 클램프)
- * - 피치는 서버 공통값 0.97 고정이며 사용자 입력을 받지 않는다.
+ * - pitchMultiplier: 0.85 ~ 1.10
  */
 
-const FIXED_PITCH = 0.97
+const PITCH_MIN = 0.85
+const PITCH_MAX = 1.1
+const DEFAULT_PITCH = 0.97
 const RATE_MIN = 0.9
 const RATE_MAX = 1.2
 const VOLUME_MIN = 1
@@ -153,7 +155,9 @@ function ssmlFor(content, settings) {
   const rate = clamp(settings.speechRateMultiplier, RATE_MIN, RATE_MAX, 1).toFixed(2)
   const volume = clamp(settings.volumeMultiplier, VOLUME_MIN, VOLUME_MAX, 1)
   const volumeAttribute = volume === 1 ? '100' : `+${Math.round((volume - 1) * 100)}%`
-  const pitchAttribute = `${Math.round((FIXED_PITCH - 1) * 100)}%`
+  const pitch = clamp(settings.pitchMultiplier, PITCH_MIN, PITCH_MAX, DEFAULT_PITCH)
+  const pitchOffset = Math.round((pitch - 1) * 100)
+  const pitchAttribute = pitchOffset === 0 ? '0%' : `${pitchOffset > 0 ? '+' : ''}${pitchOffset}%`
 
   return (
     '<speak version="1.0" xml:lang="ko-KR" xmlns="http://www.w3.org/2001/10/synthesis">' +
@@ -180,7 +184,7 @@ export function stop() {
  * 인증 토큰이 있으면 Azure Speech로 읽고, 실패하면 브라우저 음성으로 되돌린다.
  *
  * @param {string} text 서버가 내려준 ttsText
- * @param {{ ttsVoice?: string, speechRateMultiplier?: number, volumeMultiplier?: number,
+ * @param {{ ttsVoice?: string, speechRateMultiplier?: number, pitchMultiplier?: number, volumeMultiplier?: number,
  *   ttsSsml?: string, speechCredential?: { token: string, region: string } }} settings
  * @returns {Promise<{ spoken: boolean, reason: string|null }>}
  */
@@ -204,7 +208,7 @@ export async function speak(text, settings = {}) {
   const voices = await listVoices()
   const utterance = new window.SpeechSynthesisUtterance(content)
   utterance.lang = 'ko-KR'
-  utterance.pitch = FIXED_PITCH
+  utterance.pitch = clamp(settings.pitchMultiplier, PITCH_MIN, PITCH_MAX, DEFAULT_PITCH)
   utterance.rate = clamp(settings.speechRateMultiplier, RATE_MIN, RATE_MAX, 1)
   utterance.volume = Math.min(clamp(settings.volumeMultiplier, VOLUME_MIN, VOLUME_MAX, 1), 1)
 

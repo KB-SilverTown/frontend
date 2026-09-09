@@ -11,6 +11,7 @@ import {
   captureSpeech,
 } from '../services/voiceStt.js'
 import { createTransferVoiceController } from '../services/voiceTransferController.js'
+import { DEFAULT_VOICE_SETTINGS, normalizeVoiceSettings } from '../model/settings.js'
 
 /** Azure 토큰이 이 시간 안에 만료되면 재생 전에 새로 받는다. */
 const SPEECH_TOKEN_REFRESH_MARGIN_MS = 60_000
@@ -30,12 +31,6 @@ export const TRANSFER_VOICE_PHASE = Object.freeze({
   TEXT_FALLBACK: 'TEXT_FALLBACK',
 })
 
-const DEFAULT_VOICE_SETTINGS = {
-  ttsVoice: 'ko-KR-JiMinNeural',
-  speechRateMultiplier: 1.05,
-  volumeMultiplier: 1,
-}
-
 export const useVoiceStore = defineStore('voice', () => {
   const sessionId = ref('')
   const session = ref(null)
@@ -47,6 +42,8 @@ export const useVoiceStore = defineStore('voice', () => {
   const transcript = ref('')
   const partialTranscript = ref('')
   const settings = reactive({ ...DEFAULT_VOICE_SETTINGS })
+  const draftSettings = reactive({ ...DEFAULT_VOICE_SETTINGS })
+  const settingsLoaded = ref(false)
   const error = ref(null)
   const busy = ref(false)
   const transferPhase = ref(TRANSFER_VOICE_PHASE.IDLE)
@@ -362,7 +359,7 @@ export const useVoiceStore = defineStore('voice', () => {
     return speechToken.value
   }
 
-  async function speakText(text, ssml) {
+  async function speakText(text, ssml, settingsOverride) {
     const content = String(text ?? '').trim()
     if (!content) return { spoken: false, reason: 'EMPTY_TEXT' }
 
@@ -378,7 +375,12 @@ export const useVoiceStore = defineStore('voice', () => {
       if (generation !== speakGeneration) return { spoken: false, reason: 'STOPPED' }
       if (!credential && !isSpeechSupported()) return { spoken: false, reason: 'UNSUPPORTED' }
 
-      return await speak(content, { ...settings, ttsSsml: ssml, speechCredential: credential })
+      const playbackSettings = settingsOverride || settings
+      return await speak(content, {
+        ...playbackSettings,
+        ttsSsml: ssml,
+        speechCredential: credential,
+      })
     } finally {
       // 더 최신 발화가 시작됐다면 상태는 그쪽이 관리한다.
       if (generation === speakGeneration) {
@@ -631,28 +633,40 @@ export const useVoiceStore = defineStore('voice', () => {
     return response
   }
 
-  async function loadSettings() {
+  async function loadSettings(options = {}) {
+    const force = options?.force === true
+    if (settingsLoaded.value && !force) return { ...settings }
+
     const response = await run(() => voiceApi.getSettings())
-    Object.assign(settings, {
-      ttsVoice: response?.ttsVoice ?? settings.ttsVoice,
-      speechRateMultiplier: response?.speechRateMultiplier ?? settings.speechRateMultiplier,
-      volumeMultiplier: response?.volumeMultiplier ?? settings.volumeMultiplier,
-    })
+    const nextSettings = normalizeVoiceSettings(response)
+    Object.assign(settings, nextSettings)
+    Object.assign(draftSettings, nextSettings)
+    settingsLoaded.value = true
     return response
   }
 
+  function updateDraftSettings(request) {
+    Object.assign(draftSettings, normalizeVoiceSettings({ ...draftSettings, ...(request || {}) }))
+  }
+
+  function resetDraftSettings() {
+    Object.assign(draftSettings, DEFAULT_VOICE_SETTINGS)
+  }
+
+  function discardDraftSettings() {
+    Object.assign(draftSettings, settings)
+  }
+
   async function saveSettings(request) {
-    const payload = {
-      ttsVoice: request?.ttsVoice ?? settings.ttsVoice,
-      speechRateMultiplier: request?.speechRateMultiplier ?? settings.speechRateMultiplier,
-      volumeMultiplier: request?.volumeMultiplier ?? settings.volumeMultiplier,
-    }
-    const response = await run(() => voiceApi.updateSettings(payload))
-    Object.assign(settings, {
-      ttsVoice: response?.ttsVoice ?? payload.ttsVoice,
-      speechRateMultiplier: response?.speechRateMultiplier ?? payload.speechRateMultiplier,
-      volumeMultiplier: response?.volumeMultiplier ?? payload.volumeMultiplier,
+    const payload = normalizeVoiceSettings({
+      ...draftSettings,
+      ...(request || {}),
     })
+    const response = await run(() => voiceApi.updateSettings(payload))
+    const nextSettings = normalizeVoiceSettings({ ...payload, ...(response || {}) })
+    Object.assign(settings, nextSettings)
+    Object.assign(draftSettings, nextSettings)
+    settingsLoaded.value = true
     return response
   }
 
@@ -668,6 +682,8 @@ export const useVoiceStore = defineStore('voice', () => {
     transcript.value = ''
     partialTranscript.value = ''
     Object.assign(settings, DEFAULT_VOICE_SETTINGS)
+    Object.assign(draftSettings, DEFAULT_VOICE_SETTINGS)
+    settingsLoaded.value = false
     error.value = null
     busy.value = false
     transferPhase.value = TRANSFER_VOICE_PHASE.IDLE
@@ -685,6 +701,8 @@ export const useVoiceStore = defineStore('voice', () => {
     partialTranscript,
     transferPhase,
     settings,
+    draftSettings,
+    settingsLoaded,
     error,
     busy,
     sttMode,
@@ -721,6 +739,9 @@ export const useVoiceStore = defineStore('voice', () => {
     closeSession,
     issueSpeechToken,
     loadSettings,
+    updateDraftSettings,
+    resetDraftSettings,
+    discardDraftSettings,
     saveSettings,
     reset,
   }
