@@ -13,6 +13,7 @@ import { createSourceReader } from '../../helpers/source.js'
 const readSource = createSourceReader(import.meta.url)
 const panelSource = readSource('../../../src/features/voice/components/VoiceSettingsPanel.vue')
 const voiceStoreSource = readSource('../../../src/features/voice/stores/voice.js')
+const voiceSettingsStyleSource = readSource('../../../src/features/voice/styles/voice-settings.css')
 const routeViewSource = `${readSource(
   '../../../src/features/service-screen/composables/useServiceScreen.js',
 )}\n${readSource('../../../src/features/service-screen/pages/ServiceScreenPage.vue')}`
@@ -57,6 +58,21 @@ test('voice settings panel renders every requested option and keeps controls acc
   assert.match(panelSource, /v-for="option in PITCH_OPTIONS"/)
   assert.match(panelSource, /aria-pressed/)
 })
+test('speech rate choices stay readable in a two-column layout', () => {
+  assert.match(
+    voiceSettingsStyleSource,
+    /\.voice-settings-options-five\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
+  )
+  assert.match(
+    voiceSettingsStyleSource,
+    /\.voice-settings-option-compact\s*\{[\s\S]*?font-size:\s*clamp\(18px,\s*5vw,\s*26px\);/,
+  )
+  assert.match(
+    voiceSettingsStyleSource,
+    /\.voice-settings-options-five \.voice-settings-option:nth-child\(3\)\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/,
+  )
+})
+
 test('preview playback uses the unsaved draft settings', () => {
   assert.match(voiceStoreSource, /settingsOverride/)
   assert.match(panelSource, /voiceStore\.draftSettings/)
