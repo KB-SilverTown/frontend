@@ -273,6 +273,7 @@ watch(
         type="password" /><input
         v-else
         v-model="pin"
+        class="transfer-pin-input"
         maxlength="6"
         autocomplete="one-time-code"
         inputmode="numeric"
