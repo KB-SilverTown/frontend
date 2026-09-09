@@ -123,6 +123,8 @@ export const useVoiceStore = defineStore('voice', () => {
   let transferController = null
   let transferVoiceEnabled = false
   let transferPending = null
+  // TTS 중 생성한 모니터의 늦은 완료/실패가 이후 사용자 입력용 컨트롤러를 정리하지 않게 한다.
+  let transferMonitorOwner = null
 
   function transferUserError(cause) {
     const normalized = toUserError(cause)
@@ -272,21 +274,27 @@ export const useVoiceStore = defineStore('voice', () => {
     return transferController
   }
 
-  async function startTransferMonitor() {
+  async function startTransferMonitor(owner) {
     if (!usesBackendStream.value || !transferVoiceEnabled || !sessionId.value) return null
 
+    const controller = getTransferController()
     try {
-      return await getTransferController().startMonitoring()
+      return await controller.startMonitoring()
     } catch (cause) {
+      // 안내 TTS가 끝났거나 새 입력이 시작되면 이 모니터는 더 이상 현재 흐름의 소유자가 아니다.
+      if (transferMonitorOwner !== owner || transferController !== controller) return null
       transferUserError(cause)
-      await closeTransferResources(cause)
+      await closeTransferResources(cause, controller)
       return null
     }
   }
 
-  async function closeTransferResources(cause = null) {
+  async function closeTransferResources(cause = null, expectedController = null) {
+    if (expectedController && transferController !== expectedController) return false
+
     const controller = transferController
     transferController = null
+    transferMonitorOwner = null
     partialTranscript.value = ''
 
     const pending = transferPending
@@ -304,6 +312,7 @@ export const useVoiceStore = defineStore('voice', () => {
     }
 
     await controller?.close?.().catch(() => {})
+    return Boolean(controller)
   }
 
   async function stopVoiceResources() {
@@ -335,6 +344,9 @@ export const useVoiceStore = defineStore('voice', () => {
       usesBackendStream.value &&
       transferVoiceEnabled &&
       Boolean(interruptedSessionId && interruptedAiTurnId)
+
+    // 사용자가 입력을 시작하면 직전 TTS 모니터의 늦은 정리가 새 스트림에 관여하면 안 된다.
+    if (usesBackendStream.value) transferMonitorOwner = null
 
     // TTS는 서버 ACK를 기다리지 않고 즉시 중단한다. 단, 새 START는
     // BARGE_IN의 CANCELLED.readyForStart=true가 도착한 뒤에만 컨트롤러가 보낸다.
@@ -394,10 +406,12 @@ export const useVoiceStore = defineStore('voice', () => {
 
     speakGeneration += 1
     const generation = speakGeneration
+    const monitorOwner = {}
     speaking.value = true
     if (usesBackendStream.value && transferVoiceEnabled) {
       transferPhase.value = TRANSFER_VOICE_PHASE.TTS_PLAYING
-      startTransferMonitor().catch(() => {})
+      transferMonitorOwner = monitorOwner
+      startTransferMonitor(monitorOwner).catch(() => {})
     }
     try {
       const credential = await ensureSpeechCredential()
@@ -416,7 +430,9 @@ export const useVoiceStore = defineStore('voice', () => {
       if (generation === speakGeneration) {
         speaking.value = false
         if (usesBackendStream.value && transferVoiceEnabled) {
-          await closeTransferResources()
+          if (transferMonitorOwner === monitorOwner) {
+            await closeTransferResources()
+          }
           if (transferPhase.value === TRANSFER_VOICE_PHASE.TTS_PLAYING) {
             transferPhase.value = TRANSFER_VOICE_PHASE.IDLE
           }
