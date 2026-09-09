@@ -165,6 +165,56 @@ test('card input interrupts current client TTS before sending a UI action', asyn
   }
 })
 
+test('backend stream card actions use the AI response turn ID issued with the card', async () => {
+  setActivePinia(createPinia())
+
+  const originalUiAction = voiceApi.uiAction
+  const requests = []
+  voiceApi.uiAction = async (sessionId, request) => {
+    requests.push({ sessionId, request })
+    return {
+      responseTurnId: 'ai-response-2',
+      ttsText: null,
+      ttsSsml: null,
+      displayCard: null,
+    }
+  }
+
+  try {
+    const store = useVoiceStore()
+    store.sessionId = 'session-1'
+    store.session = { sessionId: 'session-1', sttMode: 'BACKEND_STREAM', status: 'SPEAKING' }
+    store.lastTurn = {
+      turnId: 'input-turn-1',
+      aiTurnId: 'ai-turn-1',
+      displayCard: {
+        type: 'RECIPIENT_CANDIDATES',
+        cardId: 'card-1',
+        cardVersion: 1,
+        items: [{ id: 'recipient-1' }],
+      },
+    }
+
+    await store.sendUiAction('SELECT_RECIPIENT', 'recipient-1')
+
+    assert.deepEqual(requests, [
+      {
+        sessionId: 'session-1',
+        request: {
+          actionId: requests[0].request.actionId,
+          actionType: 'SELECT_RECIPIENT',
+          cardId: 'card-1',
+          cardVersion: 1,
+          sourceTurnId: 'ai-turn-1',
+          itemId: 'recipient-1',
+        },
+      },
+    ])
+  } finally {
+    voiceApi.uiAction = originalUiAction
+  }
+})
+
 test('backend stream input does not send the CLIENT INTERRUPTED event', async () => {
   setActivePinia(createPinia())
 
