@@ -61,7 +61,7 @@ test('large font option previews the large body text size', () => {
   assert.match(fontSizeSource, /class="font-size-option font-size-option-large"/)
   assert.match(
     styleSource,
-    /\.font-size-option-large\s*\{[\s\S]*?font-size:\s*max\(var\(--font-size-body\),\s*21px\);/,
+    /\.font-size-option-large\s*\{[\s\S]*?font-size:\s*max\(var\(--font-size-body\),\s*23px\);/,
   )
 })
 
@@ -151,10 +151,10 @@ test('production navigation exposes my page as the rightmost fourth item', () =>
   assert.match(onboardingSource, /@mypage="openMyPage"/)
 })
 
-test('four-item bottom navigation keeps equal columns', () => {
+test('four-item bottom navigation spaces labels by content width', () => {
   assert.match(
     styleSource,
-    /\.app-bottom-nav\.four-items\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4,\s*1fr\);/,
+    /\.app-bottom-nav\.four-items\s*\{[\s\S]*?display:\s*flex;[\s\S]*?justify-content:\s*space-evenly;/,
   )
 })
 

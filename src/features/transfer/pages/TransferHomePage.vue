@@ -90,7 +90,6 @@ function startVoiceTransfer() {
 
       <main class="app-main transfer-main">
         <section class="screen-heading transfer-heading">
-          <span class="transfer-kicker">송금 · 홈</span>
           <h1>홈</h1>
           <p>잔액과 핵심 서비스만 단순하게 보여줍니다.</p>
         </section>

@@ -23,7 +23,7 @@ const serviceScreens = {
     },
   },
   living: {
-    title: '내 정보',
+    title: '생활금융',
     description: '계좌·알림·이동점포로 이동합니다.',
     groups: [
       [
@@ -147,9 +147,6 @@ function startVoiceAssist() {
 
       <main class="app-main service-home-main">
         <section class="screen-heading service-home-heading">
-          <span class="service-home-kicker">{{
-            service === 'bills' ? '고지서 · 홈' : '생활금융 · 홈'
-          }}</span>
           <h1>{{ screen.title }}</h1>
           <p>{{ screen.description }}</p>
         </section>

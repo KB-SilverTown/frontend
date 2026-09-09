@@ -56,7 +56,7 @@ function goBack() {
           <p>화면을 보기 편한 크기로 선택해 주세요.</p>
         </section>
 
-        <fieldset class="font-size-picker">
+        <fieldset class="font-size-picker font-size-page">
           <legend>글씨 크기 선택</legend>
           <div
             class="font-size-options"

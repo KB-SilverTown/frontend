@@ -60,6 +60,14 @@
   height: 44px;
 }
 
+.font-size-page {
+  --font-size-title: 30px;
+  --font-size-body: 19px;
+  --font-size-action: 24px;
+  --font-size-display: 36px;
+  --font-size-nav: 16px;
+}
+
 .app-main {
   position: relative;
   min-height: 0;
@@ -161,7 +169,16 @@
 }
 
 .app-bottom-nav.four-items {
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  justify-content: space-evenly;
+  padding-inline: 8px;
+}
+
+.app-bottom-nav.four-items :is(a, button) {
+  box-sizing: border-box;
+  min-width: 44px;
+  padding-inline: 4px;
+  white-space: nowrap;
 }
 
 .app-bottom-nav button {
@@ -233,7 +250,7 @@
 }
 
 .font-size-option-large {
-  font-size: max(var(--font-size-body), 21px);
+  font-size: max(var(--font-size-body), 23px);
 }
 
 .font-size-option.selected {

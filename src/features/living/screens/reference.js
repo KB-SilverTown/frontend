@@ -1,7 +1,7 @@
 export default [
   {
     key: 'living-home',
-    title: '내 정보',
+    title: '생활금융',
     description: '계좌·알림·이동점포로 이동합니다.',
     contentHtml:
       '<div class="choices"><div class="choice active"><span>내 계좌</span><i>✓</i></div><div class="choice "><span>납부 알림</span><i></i></div></div><div class="choices"><div class="choice active"><span>이동점포 정보</span><i>✓</i></div><div class="choice "><span>가입 정보</span><i></i></div></div>',

@@ -95,6 +95,9 @@ export function useServiceScreen() {
         )) ||
       Boolean(route.meta?.myPageVoice),
   )
+  const isLivingReminderEmptyScreen = computed(
+    () => service.value === 'living' && screenKey.value === 'living-reminders-empty',
+  )
   const backRoute = computed(() => (isMyPageDetail.value ? { name: 'my-page' } : homeRoute.value))
   const primaryRoute = computed(() => actionRoutes.value.primary)
   const secondaryRoute = computed(() => actionRoutes.value.secondary)
@@ -1638,6 +1641,7 @@ export function useServiceScreen() {
 
   function goBack() {
     if (isVoiceSettingsScreen.value) voiceStore.discardDraftSettings()
+    if (isLivingReminderEmptyScreen.value) return router.replace(homeRoute.value)
     return goBackOrReplace(router, backRoute.value)
   }
 
