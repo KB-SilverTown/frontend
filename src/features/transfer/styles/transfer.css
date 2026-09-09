@@ -1094,6 +1094,40 @@
   font-size: 16px;
 }
 
+.transfer-voice-card-option {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 750;
+  text-align: left;
+}
+
+.transfer-voice-card-option[aria-checked='true'] {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.transfer-voice-card-option:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.transfer-voice-card-actions {
+  display: grid;
+  flex: 1 1 180px;
+  gap: 6px;
+}
+
+.transfer-voice-card-actions button {
+  min-height: 36px;
+  font-size: 14px;
+}
+
 .transfer-voice-error {
   margin: 0;
   color: var(--destructive);
