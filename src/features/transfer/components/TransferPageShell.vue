@@ -13,10 +13,11 @@ defineEmits(['back', 'primary', 'secondary'])
 
 <template>
   <div class="app-stage">
-    <article class="mobile-app-shell">
+    <article class="mobile-app-shell service-route-device">
       <header class="app-header">
         <Button
           aria-label="뒤로"
+          class="app-header-button service-route-back"
           size="icon"
           variant="secondary"
           @click="$emit('back')"
@@ -58,7 +59,7 @@ defineEmits(['back', 'primary', 'secondary'])
       </main>
       <nav
         aria-label="주요 메뉴"
-        class="app-bottom-nav four-items"
+        class="app-bottom-nav four-items service-route-bottom-nav"
       >
         <RouterLink
           replace

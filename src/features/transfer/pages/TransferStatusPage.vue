@@ -84,8 +84,8 @@ function primary() {
   <TransferPageShell
     :title="state[0]"
     :description="state[1]"
-    :primary-label="isListeningScreen ? '' : state[2]"
-    @back="goBackOrReplace(router, { name: 'transfer-home' })"
+    :primary-label="state[2]"
+    @back="router.push({ name: 'transfer-home' })"
     @primary="primary"
     ><VoiceConversationPanel
       v-if="isListeningScreen"
