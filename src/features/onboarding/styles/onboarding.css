@@ -170,6 +170,8 @@
 
 .app-bottom-nav.four-items {
   grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding-inline: 8px;
 }
 
 .app-bottom-nav button {
