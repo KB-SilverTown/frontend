@@ -14,6 +14,14 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  returnRoute: {
+    type: Object,
+    default: () => ({ name: 'voice-home' }),
+  },
+  inputPlaceholder: {
+    type: String,
+    default: '예: 김영희에게 오만원 보내줘',
+  },
 })
 
 const router = useRouter()
@@ -127,9 +135,7 @@ const draftRows = computed(() => toRows(voiceStore.draftSummary))
 const requiredSlotRows = computed(() => toRows(voiceStore.requiredSlot))
 
 const isTransfer = computed(() => props.entryPoint === 'TRANSFER')
-const homeRoute = computed(() =>
-  isTransfer.value ? { name: 'transfer-home' } : { name: 'voice-home' },
-)
+const homeRoute = computed(() => (isTransfer.value ? { name: 'transfer-home' } : props.returnRoute))
 
 const candidateCard = computed(() => voiceStore.selectableCard)
 const candidateItems = computed(() => voiceStore.cardItems)
@@ -384,25 +390,55 @@ onBeforeUnmount(() => {
 <template>
   <section
     aria-label="음성 대화"
-    class="flex flex-col gap-5 rounded-[28px] bg-card p-6"
+    class="voice-conversation-panel"
   >
-    <p
-      aria-live="polite"
-      class="text-[15px] font-semibold text-muted-foreground"
+    <button
+      :aria-label="busy ? '음성을 듣고 있어요' : '음성으로 말하기'"
+      class="voice-conversation-stage"
+      :disabled="busy"
+      type="button"
+      @click="listen"
     >
-      {{ statusLabel }}
-    </p>
+      <span
+        aria-hidden="true"
+        class="voice-conversation-rings"
+      >
+        <i /><i /><i />
+      </span>
+      <span
+        aria-hidden="true"
+        class="voice-conversation-mic"
+      />
+      <span
+        :class="[
+          'voice-conversation-wave',
+          { 'is-active': voiceStore.listening || voiceStore.busy },
+        ]"
+        aria-hidden="true"
+      >
+        <i
+          v-for="height in [18, 28, 40, 52, 35, 46, 30, 52, 40, 28, 18]"
+          :key="height"
+          :style="{ height: `${height}px` }"
+        />
+      </span>
+      <strong
+        aria-live="polite"
+        class="voice-conversation-status"
+        ><b aria-hidden="true">●</b> {{ statusLabel }}</strong
+      >
+    </button>
 
     <p
       v-if="guidanceText"
-      class="text-2xl leading-relaxed font-bold"
+      class="voice-conversation-guidance"
     >
       {{ guidanceText }}
     </p>
 
     <p
       v-if="correctionHint"
-      class="rounded-2xl bg-muted p-4 text-lg leading-relaxed"
+      class="voice-conversation-correction"
       role="status"
     >
       {{ correctionHint }}
@@ -410,7 +446,7 @@ onBeforeUnmount(() => {
 
     <p
       v-if="voiceStore.transcript"
-      class="text-lg leading-relaxed"
+      class="voice-conversation-transcript"
     >
       이렇게 들었어요 — “{{ voiceStore.transcript }}”
     </p>
@@ -418,7 +454,7 @@ onBeforeUnmount(() => {
     <p
       v-if="voiceStore.partialTranscript"
       aria-live="polite"
-      class="text-lg leading-relaxed text-muted-foreground"
+      class="voice-conversation-transcript is-active"
     >
       듣고 있어요 — “{{ voiceStore.partialTranscript }}▌”
     </p>
@@ -547,15 +583,6 @@ onBeforeUnmount(() => {
 
     <div class="flex flex-col gap-3">
       <Button
-        v-if="voiceCaptureReady"
-        class="min-h-16 w-full text-xl"
-        :disabled="busy"
-        @click="listen"
-      >
-        {{ voiceStore.listening ? '듣고 있어요…' : '음성으로 말하기' }}
-      </Button>
-
-      <Button
         v-if="guidanceText"
         class="w-full"
         :disabled="busy"
@@ -589,7 +616,7 @@ onBeforeUnmount(() => {
         v-model="draft"
         class="min-h-14 rounded-2xl border px-4 text-lg"
         maxlength="200"
-        placeholder="예: 김영희에게 오만원 보내줘"
+        :placeholder="inputPlaceholder"
         type="text"
         @keyup.enter="canSubmitDraft && submitDraft()"
       />

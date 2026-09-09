@@ -16,7 +16,11 @@ const router = useRouter()
 
 function openVoice() {
   window.dispatchEvent(new CustomEvent('gwipyeonhan:voice-assist'))
-  router.push({ name: 'voice-screen', params: { screenKey: 'voice-enabled' } })
+  router.push({
+    name: 'voice-screen',
+    params: { screenKey: 'voice-enabled' },
+    query: { source: 'bills' },
+  })
 }
 </script>
 
