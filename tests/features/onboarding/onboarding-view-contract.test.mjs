@@ -41,7 +41,7 @@ test('signup validation failure reports the actual step and fields before the re
   assert.match(submitFunction, /actionNotice\.value/)
   assert.match(submitFunction, /formatValidationNotice\(result\)/)
 })
-test('permissions step submits signup before completing the UI flow', async () => {
+test('permissions are requested before entering the signup form', async () => {
   const source = await readOnboardingView()
   const submitFunction = source.match(
     /async function submitOnboarding\(\)\s*\{([\s\S]*?)\n\s*\}\n\s*function closePostcode/,
@@ -53,7 +53,10 @@ test('permissions step submits signup before completing the UI flow', async () =
   assert.ok(
     submitFunction.indexOf('store.submit()') < submitFunction.indexOf('store.finishUiFlow()'),
   )
-  assert.match(source, /if \(id === 'permissions'\) return submitOnboarding\(\)/)
+  assert.match(
+    source,
+    /if \(id === 'permissions'\) \{\s*if \(permissionsRequesting\.value\) return\s*permissionsRequesting\.value = true\s*try \{\s*await requestOnboardingDevicePermissions\(\)\s*return go\('consent-overview'\)/,
+  )
 })
 
 test('successful signup goes directly to the transfer home screen', async () => {
@@ -73,12 +76,11 @@ test('successful signup goes directly to the transfer home screen', async () => 
   )
 })
 
-test('already granted native permissions skip the permissions screen', async () => {
+test('the emergency-contact step proceeds to signup without reopening permissions', async () => {
   const source = await readOnboardingView()
 
-  assert.match(source, /async function areDevicePermissionsGranted\(\)/)
-  assert.match(source, /if \(await areDevicePermissionsGranted\(\)\) return submitOnboarding\(\)/)
-  assert.match(source, /if \(id === 'permissions'\) return submitOnboarding\(\)/)
+  assert.match(source, /if \(id === 'emergency-contact'\) \{[\s\S]*?return submitOnboarding\(\)/)
+  assert.doesNotMatch(source, /areDevicePermissionsGranted/)
 })
 
 test('required consent detail screens do not render guidance cards', async () => {
