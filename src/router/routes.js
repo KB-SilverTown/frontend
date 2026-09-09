@@ -53,6 +53,11 @@ export const routes = [
     component: () => import('@/views/BillCameraView.vue'),
   },
   {
+    path: '/bills/camera-permission',
+    name: 'bill-camera-permission',
+    component: () => import('@/views/BillCameraPermissionView.vue'),
+  },
+  {
     path: '/bills/ocr',
     name: 'bills-ocr',
     component: () => import('@/views/BillOcrView.vue'),

@@ -117,11 +117,23 @@ async function startBillCamera() {
 
     stopBillCamera()
     const permissionDenied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError'
-    actionErrorCode.value = permissionDenied ? 'CAMERA_PERMISSION' : ''
-    actionError.value = permissionDenied
-      ? '카메라 권한을 허용해 주세요. 촬영 버튼을 누르면 다시 시도할 수 있어요.'
-      : '카메라 미리보기를 준비하지 못했어요. 촬영 버튼을 눌러 다시 시도해 주세요.'
+    if (permissionDenied) {
+      await router.replace({ name: 'bill-camera-permission', query: route.query })
+      return
+    }
+
+    actionErrorCode.value = ''
+    actionError.value = '카메라 미리보기를 준비하지 못했어요. 촬영 버튼을 눌러 다시 시도해 주세요.'
   }
+}
+
+function isCameraPermissionError(error) {
+  return (
+    error?.code === 'CAMERA_PERMISSION' ||
+    error?.name === 'NotAllowedError' ||
+    error?.name === 'SecurityError' ||
+    error?.message === '카메라 권한이 필요해요.'
+  )
 }
 
 async function setPhotoPreview(source, capturedImage = null) {
@@ -145,6 +157,14 @@ async function uploadBill(source, capturedImage = null) {
   try {
     await setPhotoPreview(source, capturedImage)
   } catch (error) {
+    if (source === 'camera' && isCameraPermissionError(error)) {
+      cleanupBillCamera()
+      pendingBillImage = null
+      clearPendingBillImage()
+      await router.replace({ name: 'bill-camera-permission', query: route.query })
+      return
+    }
+
     if (error?.code === 'UNSUPPORTED_BILL_FILE') {
       cleanupBillCamera()
       pendingBillImage = null
