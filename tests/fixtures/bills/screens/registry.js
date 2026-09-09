@@ -1,4 +1,4 @@
-import { createScreenRegistry } from '../../../shared/lib/screen-registry.js'
+import { createScreenRegistry } from '../../../../src/shared/lib/screen-registry.js'
 
 const definitions = [
   ['sourceSelect', 'scan', '3-02', '촬영 또는 앨범에서 선택'],

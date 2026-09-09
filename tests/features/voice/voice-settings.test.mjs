@@ -22,8 +22,8 @@ const panelSource = readSource('../../../src/features/voice/components/VoiceSett
 const voiceStoreSource = readSource('../../../src/features/voice/stores/voice.js')
 const voiceSettingsStyleSource = readSource('../../../src/features/voice/styles/voice-settings.css')
 const routeViewSource = `${readSource(
-  '../../../src/features/service-screen/composables/useServiceScreen.js',
-)}\n${readSource('../../../src/features/service-screen/pages/ServiceScreenPage.vue')}`
+  '../../fixtures/service-screen/composables/useServiceScreen.js',
+)}\n${readSource('../../fixtures/service-screen/pages/ServiceScreenPage.vue')}`
 
 test('voice settings expose the requested gender, rate, and pitch choices', () => {
   assert.deepEqual(

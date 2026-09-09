@@ -8,7 +8,7 @@ import {
   loadProductionScreen,
   productionServiceScreens,
   resolveProductionScreen,
-} from '../../../src/features/service-screen/services/productionServiceScreens.js'
+} from '../../fixtures/service-screen/services/productionServiceScreens.js'
 import {
   mobileBranchSchedule,
   mobileBranchDocuments,
@@ -24,11 +24,11 @@ const transferHomeSource = readFileSync(
   'utf8',
 )
 const routeViewPageSource = readFileSync(
-  new URL('../../../src/features/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
+  new URL('../../fixtures/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
   'utf8',
 )
 const routeViewComposableSource = readFileSync(
-  new URL('../../../src/features/service-screen/composables/useServiceScreen.js', import.meta.url),
+  new URL('../../fixtures/service-screen/composables/useServiceScreen.js', import.meta.url),
   'utf8',
 )
 const routeViewSource = `${routeViewComposableSource}\n${routeViewPageSource}`
@@ -130,10 +130,7 @@ test('production action routes follow the service flow instead of raw screen ord
 
 test('empty living reminder screen returns to the living home instead of browser history', () => {
   const serviceScreenComposableSource = readFileSync(
-    new URL(
-      '../../../src/features/service-screen/composables/useServiceScreen.js',
-      import.meta.url,
-    ),
+    new URL('../../fixtures/service-screen/composables/useServiceScreen.js', import.meta.url),
     'utf8',
   )
 

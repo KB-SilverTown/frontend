@@ -1,4 +1,4 @@
-import { createScreenRegistry } from '../../../shared/lib/screen-registry.js'
+import { createScreenRegistry } from '../../../../src/shared/lib/screen-registry.js'
 
 const definitions = [
   ['listening', 'listen', '2-02', '듣는 중'],
