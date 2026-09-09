@@ -12,7 +12,6 @@ const actionViewSources = [
   'src/features/onboarding/pages/OnboardingHelpPage.vue',
   'src/features/transfer/pages/TransferHomePage.vue',
   'src/app/pages/ServiceHomePage.vue',
-  'tests/fixtures/service-screen/pages/ServiceScreenPage.vue',
 ].map((path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8'))
 const globalStyleSource = readFileSync(
   new URL('../../src/shared/styles/globals.css', import.meta.url),

@@ -12,11 +12,9 @@ const onboardingFlowSource = readSource(
 const onboardingSource = `${onboardingFlowSource}\n${onboardingPageSource}`
 const helpSource = readSource('../../src/features/onboarding/pages/OnboardingHelpPage.vue')
 const fontSizeSource = readSource('../../src/features/my-page/pages/FontSizePage.vue')
-const serviceRoutePageSource = readSource('../fixtures/service-screen/pages/ServiceScreenPage.vue')
-const serviceRouteComposableSource = readSource(
-  '../fixtures/service-screen/composables/useServiceScreen.js',
-)
-const serviceRouteSource = `${serviceRouteComposableSource}\n${serviceRoutePageSource}`
+const serviceRoutePageSource = readSource('../../src/features/bills/pages/BillPaymentPage.vue')
+const serviceRouteShellSource = readSource('../../src/features/bills/components/BillsPageShell.vue')
+const serviceRouteSource = `${serviceRoutePageSource}\n${serviceRouteShellSource}`
 const transferHomeSource = readSource('../../src/features/transfer/pages/TransferHomePage.vue')
 const serviceHomeSource = readSource('../../src/app/pages/ServiceHomePage.vue')
 const myPageSource = readSource('../../src/features/my-page/pages/MyPagePage.vue')

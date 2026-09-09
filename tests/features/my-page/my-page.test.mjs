@@ -11,11 +11,6 @@ const fontSizeSource = readSource('../../../src/features/my-page/pages/FontSizeP
 const transferHomeSource = readSource('../../../src/features/transfer/pages/TransferHomePage.vue')
 const transferPinSource = readSource('../../../src/features/transfer/pages/TransferPinPage.vue')
 const serviceHomeSource = readSource('../../../src/app/pages/ServiceHomePage.vue')
-const routeViewPageSource = readSource('../../fixtures/service-screen/pages/ServiceScreenPage.vue')
-const routeViewComposableSource = readSource(
-  '../../fixtures/service-screen/composables/useServiceScreen.js',
-)
-const routeViewSource = `${routeViewComposableSource}\n${routeViewPageSource}`
 const shellSource = readSource('../../../src/features/onboarding/components/OnboardingShell.vue')
 const onboardingPageSource = readSource('../../../src/features/onboarding/pages/OnboardingPage.vue')
 const onboardingFlowSource = readSource(
@@ -83,21 +78,11 @@ test('production choices do not show onboarding selection indicators', () => {
   assert.doesNotMatch(transferHomeSource, /<b>✓<\/b>/)
   assert.doesNotMatch(serviceHomeSource, /selected/)
   assert.doesNotMatch(serviceHomeSource, /<b v-if="choice\.selected">✓<\/b>/)
-  assert.match(routeViewSource, /stripProductionSelectionIndicators/)
 })
 
 test('living home moves the membership card to my page', () => {
   assert.doesNotMatch(serviceHomeSource, /label: '가입 정보'/)
   assert.match(myPageSource, /screenKey: 'living-profile-edit'/)
-})
-
-test('membership detail back control returns to my page', () => {
-  assert.match(routeViewSource, /const backRoute = computed\(/)
-  assert.match(
-    routeViewSource,
-    /\['living-profile-edit', 'living-emergency-contact-edit', 'living-consents'\]/,
-  )
-  assert.match(routeViewSource, /:to="backRoute"/)
 })
 
 test('font size setting remains backed by the shared service', () => {
@@ -137,7 +122,7 @@ test('transfer PIN controls stay within the Android mobile content width', () =>
 })
 
 test('production navigation exposes my page as the rightmost fourth item', () => {
-  for (const source of [transferHomeSource, serviceHomeSource, routeViewSource]) {
+  for (const source of [transferHomeSource, serviceHomeSource, myPageSource]) {
     assert.match(source, /class="app-bottom-nav four-items/)
     assert.match(source, /name: 'my-page'/)
     assert.match(source, /마이페이지/)

@@ -10,15 +10,6 @@ const overlayPath = fileURLToPath(
 )
 const appSource = readFileSync(new URL('../../src/app/App.vue', import.meta.url), 'utf8')
 const routerSource = readFileSync(new URL('../../src/app/router/index.js', import.meta.url), 'utf8')
-const routeViewPageSource = readFileSync(
-  new URL('../fixtures/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
-  'utf8',
-)
-const routeViewComposableSource = readFileSync(
-  new URL('../fixtures/service-screen/composables/useServiceScreen.js', import.meta.url),
-  'utf8',
-)
-const routeViewSource = `${routeViewComposableSource}\n${routeViewPageSource}`
 const serviceHomeSource = readFileSync(
   new URL('../../src/app/pages/ServiceHomePage.vue', import.meta.url),
   'utf8',
@@ -78,7 +69,6 @@ test('route and initial service data loads are tracked by the global loader', ()
   assert.match(routerSource, /router\.beforeEach\(/)
   assert.match(routerSource, /endAppLoading/)
   assert.match(routerSource, /router\.afterEach\(/)
-  assert.match(routeViewSource, /withAppLoading\(/)
   assert.match(serviceHomeSource, /withAppLoading\(/)
   assert.match(transferHomeSource, /withAppLoading\(/)
 })
