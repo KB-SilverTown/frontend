@@ -157,7 +157,9 @@ export const useVoiceStore = defineStore('voice', () => {
 
     transferController = createTransferVoiceController({
       getSessionId: () => sessionId.value,
-      getCurrentTurnId: () => lastTurn.value?.aiTurnId ?? lastTurn.value?.turnId,
+      // BACKEND_STREAM의 BARGE_IN(AI_TTS)은 AI 응답 turn ID만 허용한다.
+      // data.turnId는 사용자 입력(inputTurnId)이므로 대체값으로 쓰면 안 된다.
+      getCurrentTurnId: () => lastTurn.value?.aiTurnId ?? '',
       isSpeaking: () => speaking.value,
       issueStreamTicket: (id) => voiceApi.issueStreamTicket(id),
       onBeforeBargeIn: () => {
@@ -220,12 +222,31 @@ export const useVoiceStore = defineStore('voice', () => {
           ...(data || {}),
           inputTurnId,
           turnId: data?.turnId ?? data?.aiTurnId ?? '',
-          aiTurnId: data?.aiTurnId ?? data?.turnId ?? '',
+          aiTurnId: data?.aiTurnId ?? '',
         }
         partialTranscript.value = ''
         listening.value = false
         busy.value = false
         transferPending = null
+
+        // 신규 계약에서 data.turnId는 inputTurnId다. AI 응답 ID가 없는 상태로
+        // 다음 발화를 받으면 BARGE_IN이 잘못된 대상을 취소할 수 있으므로, 음성
+        // 스트림은 여기서 멈추고 카드/텍스트 입력으로만 이어 간다.
+        if (!turn.aiTurnId) {
+          lastTurn.value = turn
+          const missingAiTurnError = {
+            isLocalError: true,
+            code: 'VOICE_AI_TURN_MISSING',
+            message: '음성 응답을 확인하지 못했어요. 아래에서 글자로 입력해 주세요.',
+          }
+          transferUserError(missingAiTurnError)
+          void stopVoiceResources()
+          // listenAndSendTransferTurn도 이 오류를 한 번 더 정규화하므로 로컬
+          // 오류 표식을 유지한 원본을 거절한다.
+          pending.reject(missingAiTurnError)
+          return
+        }
+
         transferPhase.value = turn.ttsText
           ? TRANSFER_VOICE_PHASE.TTS_PLAYING
           : TRANSFER_VOICE_PHASE.IDLE
@@ -296,11 +317,14 @@ export const useVoiceStore = defineStore('voice', () => {
   /** 입력 시작 시 TTS를 끊고, 모드에 맞는 서버 취소 신호를 보낸다. */
   async function interruptForInput() {
     const interruptedSessionId = sessionId.value
-    const interruptedAiTurnId = lastTurn.value?.aiTurnId ?? lastTurn.value?.turnId
+    // 일반 CLIENT 모드는 기존 turn ID를 서버 이벤트에 보낸다.
+    const interruptedTurnId = lastTurn.value?.turnId ?? ''
+    // BACKEND_STREAM의 AI_TTS 취소에는 AI 응답 turn ID만 쓴다.
+    const interruptedAiTurnId = lastTurn.value?.aiTurnId ?? ''
     const shouldInvalidateClientTurn =
       speaking.value &&
       !usesBackendStream.value &&
-      Boolean(interruptedSessionId && interruptedAiTurnId)
+      Boolean(interruptedSessionId && interruptedTurnId)
     const shouldBargeInTransfer =
       speaking.value &&
       usesBackendStream.value &&
@@ -328,7 +352,7 @@ export const useVoiceStore = defineStore('voice', () => {
     try {
       return await voiceApi.event(interruptedSessionId, {
         eventType: 'INTERRUPTED',
-        turnId: interruptedAiTurnId,
+        turnId: interruptedTurnId,
       })
     } catch {
       // 로컬 TTS 중단과 새 입력은 서버 이벤트 실패와 무관하게 계속한다.

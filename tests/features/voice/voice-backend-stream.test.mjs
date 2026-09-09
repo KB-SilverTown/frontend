@@ -234,3 +234,81 @@ test('backend stream renders only the active turn and never POSTs /turns', async
     restoreWindow()
   }
 })
+
+test('backend stream falls back to text when TURN_RESPONSE omits the AI turn ID', async () => {
+  setActivePinia(createPinia())
+  FakeWebSocket.instances.length = 0
+  FakeAudioWorkletNode.instances.length = 0
+
+  const originalIssueStreamTicket = voiceApi.issueStreamTicket
+  const originalIssueSpeechToken = voiceApi.issueSpeechToken
+  const originalNativeCheck = Capacitor.isNativePlatform
+
+  const restoreWindow = replaceGlobal('window', { AudioContext: FakeAudioContext })
+  const restoreNavigator = replaceGlobal('navigator', {
+    mediaDevices: {
+      getUserMedia: async () => ({ getTracks: () => [{ stop() {} }] }),
+    },
+  })
+  const restoreWorklet = replaceGlobal('AudioWorkletNode', FakeAudioWorkletNode)
+  const restoreWebSocket = replaceGlobal('WebSocket', FakeWebSocket)
+
+  Capacitor.isNativePlatform = () => false
+  voiceApi.issueStreamTicket = async () => ({ ticket: 'ticket-1' })
+  voiceApi.issueSpeechToken = async () => null
+
+  let store
+  try {
+    store = useVoiceStore()
+    store.sessionId = 'session-1'
+    store.session = {
+      sessionId: 'session-1',
+      flowType: 'TRANSFER',
+      sttMode: 'BACKEND_STREAM',
+      status: 'LISTENING',
+    }
+
+    const pending = store.listenAndSendTurn()
+    const socket = await waitFor(() => FakeWebSocket.instances[0])
+    const worklet = await waitFor(() => FakeAudioWorkletNode.instances[0])
+    const inputTurnId = sentJson(socket, 0).inputTurnId
+
+    socket.receive({ type: 'START_ACK', inputTurnId, nextSequence: 0 })
+    await new Promise((resolve) => setImmediate(resolve))
+    worklet.port.onmessage({ data: samples(0.2, 1_600) })
+    for (let index = 0; index < 5; index += 1) {
+      worklet.port.onmessage({ data: samples(0.01, 1_600) })
+    }
+    socket.receive({ type: 'STOP_ACK', inputTurnId })
+    socket.receive({
+      type: 'TURN_RESPONSE',
+      inputTurnId,
+      data: {
+        // 신규 계약에서 turnId는 사용자의 inputTurnId다.
+        turnId: inputTurnId,
+        ttsText: '다음 안내입니다.',
+      },
+    })
+
+    const error = await pending.catch((cause) => cause)
+    assert.equal(error?.code, 'VOICE_AI_TURN_MISSING')
+    assert.equal(store.lastTurn.inputTurnId, inputTurnId)
+    assert.equal(store.lastTurn.aiTurnId, '')
+    assert.equal(store.transferPhase, 'TEXT_FALLBACK')
+    assert.equal(
+      socket.sent.some(
+        (value) => typeof value === 'string' && JSON.parse(value).type === 'BARGE_IN',
+      ),
+      false,
+    )
+  } finally {
+    await store?.stopVoiceResources?.().catch(() => {})
+    voiceApi.issueStreamTicket = originalIssueStreamTicket
+    voiceApi.issueSpeechToken = originalIssueSpeechToken
+    Capacitor.isNativePlatform = originalNativeCheck
+    restoreWebSocket()
+    restoreWorklet()
+    restoreNavigator()
+    restoreWindow()
+  }
+})
