@@ -1,10 +1,5 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Capacitor } from '@capacitor/core'
-import { Camera } from '@capacitor/camera'
-import { Geolocation } from '@capacitor/geolocation'
-import { Contacts } from '@capacitor-community/contacts'
-import { SpeechRecognition } from '@capacitor-community/speech-recognition'
 
 import { BANKS, getBank } from '@/features/onboarding/model/banks.js'
 import {
@@ -12,10 +7,7 @@ import {
   formatPhoneNumber,
   resolvePostcodeSelection,
 } from '@/features/onboarding/model/contract.js'
-import {
-  arePermissionsGranted,
-  requestPermissionsInOrder,
-} from '@/features/onboarding/services/permissions.js'
+import { requestOnboardingDevicePermissions } from '@/features/onboarding/services/permissions.js'
 import { loadPostcodeApi } from '@/features/onboarding/services/postcode.js'
 import {
   areConsentDetailsAgreed,
@@ -211,51 +203,10 @@ export function useOnboardingFlow() {
     store.draft.emergencyContact.phone = formatPhoneNumber(value)
   }
 
-  async function requestPermissionIfNeeded(plugin, permission, options) {
-    const status = await plugin.checkPermissions()
-    if (status?.[permission] === 'granted' || status?.[permission] === 'limited') return
-    await plugin.requestPermissions(options)
-  }
-
-  async function requestDevicePermissions() {
-    if (!Capacitor.isNativePlatform()) return []
-
-    return requestPermissionsInOrder({
-      contacts: () => requestPermissionIfNeeded(Contacts, 'contacts'),
-      camera: () => requestPermissionIfNeeded(Camera, 'camera', { permissions: ['camera'] }),
-      location: () =>
-        requestPermissionIfNeeded(Geolocation, 'location', { permissions: ['location'] }),
-      microphone: () => requestPermissionIfNeeded(SpeechRecognition, 'speechRecognition'),
-    })
-  }
-
-  async function areDevicePermissionsGranted() {
-    if (!Capacitor.isNativePlatform()) return true
-
-    try {
-      const [contacts, camera, location, microphone] = await Promise.all([
-        Contacts.checkPermissions(),
-        Camera.checkPermissions(),
-        Geolocation.checkPermissions(),
-        SpeechRecognition.checkPermissions(),
-      ])
-
-      return arePermissionsGranted({
-        contacts: contacts?.contacts,
-        camera: camera?.camera,
-        location: location?.location,
-        microphone: microphone?.speechRecognition,
-      })
-    } catch {
-      return false
-    }
-  }
-
   async function submitOnboarding() {
     if (permissionsRequesting.value) return
     permissionsRequesting.value = true
     try {
-      await requestDevicePermissions()
       const result = await store.submit()
       if (!result.ok) {
         if (result.stepId) actionNotice.value = formatValidationNotice(result)
@@ -326,7 +277,17 @@ export function useOnboardingFlow() {
 
   async function handlePrimary() {
     const id = screenId.value
-    if (id === 'start') return go('consent-overview')
+    if (id === 'start') return go('permissions')
+    if (id === 'permissions') {
+      if (permissionsRequesting.value) return
+      permissionsRequesting.value = true
+      try {
+        await requestOnboardingDevicePermissions()
+        return go('consent-overview')
+      } finally {
+        permissionsRequesting.value = false
+      }
+    }
     if (id === 'consent-overview') return validateAndGo(id, 'basic-info')
     if (id === 'consent-optional') {
       store.draft.consents.AI_FINANCIAL_DATA_OPTIONAL =
@@ -347,10 +308,8 @@ export function useOnboardingFlow() {
     if (id === 'phone') return validateAndGo(id, 'emergency-contact')
     if (id === 'emergency-contact') {
       if (!store.validate(id)) return
-      if (await areDevicePermissionsGranted()) return submitOnboarding()
-      return go('permissions')
+      return submitOnboarding()
     }
-    if (id === 'permissions') return submitOnboarding()
     if (id === 'complete') return requestAppIntent('home')
     if (id === 'login') {
       const result = await store.login()

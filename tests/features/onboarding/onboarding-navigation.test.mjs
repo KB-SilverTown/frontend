@@ -14,13 +14,14 @@ import {
   ONBOARDING_STEPS,
 } from '../../../src/features/onboarding/model/steps.js'
 
-test('onboarding starts at the welcome screen and ends at completion', () => {
+test('onboarding requests device permissions before the signup steps', () => {
   assert.equal(ONBOARDING_STEPS[0].id, 'start')
   assert.equal(ONBOARDING_STEPS.at(-1).id, 'complete')
   assert.deepEqual(
     ONBOARDING_STEPS.map(({ id }) => id),
     [
       'start',
+      'permissions',
       'consent-overview',
       'basic-info',
       'resident-number',
@@ -28,7 +29,6 @@ test('onboarding starts at the welcome screen and ends at completion', () => {
       'bank-account',
       'phone',
       'emergency-contact',
-      'permissions',
       'complete',
     ],
   )
@@ -36,6 +36,8 @@ test('onboarding starts at the welcome screen and ends at completion', () => {
 
 test('adjacent navigation returns previous and next route-safe step ids', () => {
   assert.equal(getAdjacentStep('basic-info', -1), 'consent-overview')
+  assert.equal(getAdjacentStep('permissions', 1), 'consent-overview')
+  assert.equal(getAdjacentStep('permissions', -1), 'start')
   assert.equal(getAdjacentStep('bank-account', 1), 'phone')
   assert.equal(getAdjacentStep('bank-account', -1), 'address')
   assert.equal(getAdjacentStep('start', -1), null)
@@ -70,15 +72,15 @@ test('invalid step ids are rejected instead of silently selecting a step', () =>
 test('only data-entry steps participate in progress calculation', () => {
   assert.equal(getOnboardingStep('start').progress, 0)
   assert.equal(getOnboardingStep('basic-info').progress, 3)
-  assert.equal(getOnboardingStep('permissions').progress, 10)
+  assert.equal(getOnboardingStep('permissions').progress, 1)
   assert.equal(getOnboardingStep('complete').progress, 10)
 })
 
-test('display progress follows the seven primary onboarding stages', () => {
-  assert.deepEqual(getOnboardingDisplayProgress('consent-overview'), { current: 1, total: 7 })
-  assert.deepEqual(getOnboardingDisplayProgress('basic-info'), { current: 2, total: 7 })
-  assert.deepEqual(getOnboardingDisplayProgress('bank-select'), { current: 5, total: 7 })
-  assert.deepEqual(getOnboardingDisplayProgress('permissions'), { current: 7, total: 7 })
+test('display progress starts with device permissions', () => {
+  assert.deepEqual(getOnboardingDisplayProgress('permissions'), { current: 1, total: 8 })
+  assert.deepEqual(getOnboardingDisplayProgress('consent-overview'), { current: 2, total: 8 })
+  assert.deepEqual(getOnboardingDisplayProgress('basic-info'), { current: 3, total: 8 })
+  assert.deepEqual(getOnboardingDisplayProgress('bank-select'), { current: 6, total: 8 })
   assert.equal(getOnboardingDisplayProgress('start'), null)
   assert.equal(getOnboardingDisplayProgress('login'), null)
 })
