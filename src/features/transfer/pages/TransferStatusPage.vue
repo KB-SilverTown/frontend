@@ -2,8 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
-import VoiceConversationPanel from '@/features/voice/components/VoiceConversationPanel.vue'
-import { goBackOrReplace } from '@/shared/lib/navigation.js'
+import TransferVoicePanel from '@/features/transfer/components/TransferVoicePanel.vue'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
 const router = useRouter()
@@ -84,14 +83,10 @@ function primary() {
   <TransferPageShell
     :title="state[0]"
     :description="state[1]"
-    :primary-label="state[2]"
+    :primary-label="isListeningScreen ? '' : state[2]"
     @back="router.push({ name: 'transfer-home' })"
     @primary="primary"
-    ><VoiceConversationPanel
-      v-if="isListeningScreen"
-      entry-point="TRANSFER"
-      :screen-key="screenKey"
-    />
+    ><TransferVoicePanel v-if="isListeningScreen" />
     <section
       v-else
       class="service-route-screen-content screen-content"

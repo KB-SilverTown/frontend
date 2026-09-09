@@ -48,6 +48,11 @@ export const routes = [
     component: () => import('@/features/my-page/pages/MyPagePage.vue'),
   },
   {
+    path: '/mypage/profile',
+    name: 'my-page-profile',
+    component: () => import('@/features/my-page/pages/ProfilePage.vue'),
+  },
+  {
     path: '/mypage/font-size',
     name: 'my-page-font-size',
     component: () => import('@/features/my-page/pages/FontSizePage.vue'),

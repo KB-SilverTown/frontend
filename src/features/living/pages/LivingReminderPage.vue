@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Button } from '@/shared/components/ui/button'
 
 import LivingPageShell from '@/features/living/components/LivingPageShell.vue'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
@@ -27,6 +28,7 @@ const isForm = computed(() =>
 )
 const isList = computed(() => props.screenKey === 'living-reminders')
 
+const isEmpty = computed(() => props.screenKey === 'living-reminders-empty')
 function routeTo(screenKey, query = {}) {
   return { name: 'living-screen', params: { screenKey }, query }
 }
@@ -118,7 +120,7 @@ async function cancel() {
   }
 }
 function primary() {
-  if (isList.value) return router.push(routeTo('living-reminder-create'))
+  if (isList.value || isEmpty.value) return router.push(routeTo('living-reminder-create'))
   if (isForm.value) return save()
   return load()
 }
@@ -129,7 +131,7 @@ watch(() => [props.screenKey, route.query.reminderId], load, { immediate: true }
   <LivingPageShell
     :busy="busy || serviceData.loading.reminders"
     :description="description"
-    :primary-label="isList ? '알림 만들기' : isForm ? '저장' : '다시 불러오기'"
+    :primary-label="isList || isEmpty ? '알림 추가' : isForm ? '저장' : '다시 불러오기'"
     :secondary-label="screenKey === 'living-reminder-edit' ? '알림 취소' : ''"
     :title="title"
     @back="goBackOrReplace(router, { name: 'living-home' })"
@@ -148,25 +150,28 @@ watch(() => [props.screenKey, route.query.reminderId], load, { immediate: true }
         <template v-if="isList"
           ><p
             v-if="!serviceData.reminders.length"
-            class="service-route-live-empty"
+            class="reminder-state"
           >
             등록된 알림이 없어요.
           </p>
-          <div class="service-route-live-rows">
-            <button
+          <div class="reminder-list">
+            <Button
               v-for="item in serviceData.reminders"
               :key="item.reminderId ?? item.id"
-              class="service-route-live-row"
-              type="button"
+              class="reminder-list-item"
+              variant="secondary"
               @click="
                 router.push(
                   routeTo('living-reminder-edit', { reminderId: item.reminderId ?? item.id }),
                 )
               "
             >
-              <span>{{ item.title }}</span
-              ><b>{{ formatDate(item.scheduledAt) }}</b>
-            </button>
+              <span class="reminder-list-copy">
+                <strong>{{ item.title || '제목 없는 리마인더' }}</strong>
+                <span>{{ formatDate(item.scheduledAt) }}</span>
+              </span>
+              <span class="reminder-list-status">예정</span>
+            </Button>
           </div></template
         >
         <template v-else-if="isForm"

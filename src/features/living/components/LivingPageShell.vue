@@ -51,25 +51,25 @@ function openVoice() {
           <p>{{ description }}</p>
         </section>
         <slot />
+        <footer
+          v-if="primaryLabel || secondaryLabel"
+          class="app-actions service-route-actions"
+        >
+          <Button
+            v-if="secondaryLabel"
+            :disabled="busy"
+            variant="secondary"
+            @click="emit('secondary')"
+            >{{ secondaryLabel }}</Button
+          >
+          <Button
+            v-if="primaryLabel"
+            :disabled="busy"
+            @click="emit('primary')"
+            >{{ busy ? '처리하고 있어요…' : primaryLabel }}</Button
+          >
+        </footer>
       </main>
-      <footer
-        v-if="primaryLabel || secondaryLabel"
-        class="app-actions service-route-actions"
-      >
-        <Button
-          v-if="secondaryLabel"
-          :disabled="busy"
-          variant="secondary"
-          @click="emit('secondary')"
-          >{{ secondaryLabel }}</Button
-        >
-        <Button
-          v-if="primaryLabel"
-          :disabled="busy"
-          @click="emit('primary')"
-          >{{ busy ? '처리하고 있어요…' : primaryLabel }}</Button
-        >
-      </footer>
       <nav
         aria-label="주요 메뉴"
         class="app-bottom-nav four-items service-route-bottom-nav"

@@ -84,6 +84,7 @@ test('service navigation routes use production service screens', () => {
   assert.equal(billsHome?.path, '/bills')
   assert.equal(typeof billsHome?.component, 'function')
   assert.equal(billsHome?.redirect, undefined)
+
   assert.equal(livingHome?.path, '/living')
   assert.equal(typeof livingHome?.component, 'function')
   assert.equal(livingHome?.redirect, undefined)
@@ -95,4 +96,13 @@ test('production service homes are based on reference copy without using prototy
   }
   assert.doesNotMatch(serviceHomeSource, /전기요금 · 48,200원|통신요금 · 납부 완료/)
   assert.doesNotMatch(serviceHomeSource, /prototype-stage|PrototypeScreenView/)
+})
+
+test('transfer home clears unfinished transfer and voice values instead of restoring a draft', () => {
+  assert.match(
+    viewSource,
+    /onMounted\(\(\) => \{\s*transferStore\.reset\(\)\s*voiceStore\.reset\(\)/,
+  )
+  assert.doesNotMatch(viewSource, /restoreDraft/)
+  assert.doesNotMatch(viewSource, /checkUnfinishedTransfer/)
 })

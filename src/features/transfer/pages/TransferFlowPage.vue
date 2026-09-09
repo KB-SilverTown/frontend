@@ -17,6 +17,7 @@ const error = ref('')
 const pin = ref('')
 const guardianCode = ref('')
 const riskPurpose = ref('')
+
 const titles = {
   'transfer-recipient-select': ['받는 분 선택', '받는 분을 직접 골라주세요.', '다음'],
   'transfer-recipient-confirm': ['이분이 맞나요', '받는 분을 직접 골라주세요.', '다음'],

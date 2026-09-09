@@ -57,28 +57,28 @@ function openVoice() {
         </section>
 
         <slot />
-      </main>
 
-      <footer
-        v-if="primaryLabel || secondaryLabel"
-        class="app-actions service-route-actions"
-      >
-        <Button
-          v-if="secondaryLabel"
-          :disabled="busy"
-          variant="secondary"
-          @click="emit('secondary')"
+        <footer
+          v-if="primaryLabel || secondaryLabel"
+          class="app-actions service-route-actions"
         >
-          {{ secondaryLabel }}
-        </Button>
-        <Button
-          v-if="primaryLabel"
-          :disabled="busy"
-          @click="emit('primary')"
-        >
-          {{ primaryLabel }}
-        </Button>
-      </footer>
+          <Button
+            v-if="secondaryLabel"
+            :disabled="busy"
+            variant="secondary"
+            @click="emit('secondary')"
+          >
+            {{ secondaryLabel }}
+          </Button>
+          <Button
+            v-if="primaryLabel"
+            :disabled="busy"
+            @click="emit('primary')"
+          >
+            {{ primaryLabel }}
+          </Button>
+        </footer>
+      </main>
     </article>
   </div>
 </template>

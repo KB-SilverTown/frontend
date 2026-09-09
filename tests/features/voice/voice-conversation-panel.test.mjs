@@ -7,8 +7,8 @@ const panelSource = readFileSync(
   'utf8',
 )
 
-test('voice conversation starts one initial session after the screen mounts', () => {
-  assert.match(panelSource, /onMounted\(\(\) => \{\s*void ensureSession\(\)/)
+test('transfer conversation starts microphone input as soon as the screen mounts', () => {
+  assert.match(panelSource, /onMounted\(\(\) => \{\s*if \(isTransfer\.value\) \{\s*void listen\(\)/)
   assert.match(panelSource, /if \(sessionPromise\) return sessionPromise/)
   assert.match(panelSource, /voiceStore\.startSession\(props\.entryPoint\)/)
 })

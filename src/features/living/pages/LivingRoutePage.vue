@@ -4,10 +4,14 @@ import { useRoute } from 'vue-router'
 
 import LivingBranchPage from '@/features/living/pages/LivingBranchPage.vue'
 import LivingReminderPage from '@/features/living/pages/LivingReminderPage.vue'
+import LivingAccountPage from '@/features/living/pages/LivingAccountPage.vue'
 import LivingStatusPage from '@/features/living/pages/LivingStatusPage.vue'
 
 const route = useRoute()
 const screenKey = computed(() => String(route.params.screenKey || ''))
+const isAccountScreen = computed(() =>
+  ['living-accounts', 'living-accounts-empty', 'living-accounts-error'].includes(screenKey.value),
+)
 const isReminderScreen = computed(() =>
   [
     'living-reminders',
@@ -24,8 +28,9 @@ const isBranchScreen = computed(
 </script>
 
 <template>
+  <LivingAccountPage v-if="isAccountScreen" />
   <LivingReminderPage
-    v-if="isReminderScreen"
+    v-else-if="isReminderScreen"
     :screen-key="screenKey"
   />
   <LivingBranchPage
