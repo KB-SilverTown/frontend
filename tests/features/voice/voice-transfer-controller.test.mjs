@@ -18,7 +18,12 @@ function nextTick() {
   return new Promise((resolve) => setImmediate(resolve))
 }
 
-function createHarness({ speaking = true, turnId = 'ai-1', inputTurnId = 'input-1' } = {}) {
+function createHarness({
+  speaking = true,
+  turnId = 'ai-1',
+  inputTurnId = 'input-1',
+  waitForStreamOpen = false,
+} = {}) {
   const calls = []
   let speakingState = speaking
   let captureOptions
@@ -27,8 +32,15 @@ function createHarness({ speaking = true, turnId = 'ai-1', inputTurnId = 'input-
   let resolveStart
   let bargeInPromise = null
   let startPromise = null
+  let resolveStreamOpen
+  const streamOpenPromise = waitForStreamOpen
+    ? new Promise((resolve) => {
+        resolveStreamOpen = resolve
+      })
+    : null
 
   const stream = {
+    waitForOpen: streamOpenPromise ? () => streamOpenPromise : undefined,
     start: (newInputTurnId) => {
       calls.push(['start', newInputTurnId])
       startPromise = new Promise((resolve) => {
@@ -107,6 +119,9 @@ function createHarness({ speaking = true, turnId = 'ai-1', inputTurnId = 'input-
     get resolveStart() {
       return resolveStart
     },
+    get resolveStreamOpen() {
+      return resolveStreamOpen
+    },
     get bargeInPromise() {
       return bargeInPromise
     },
@@ -116,6 +131,26 @@ function createHarness({ speaking = true, turnId = 'ai-1', inputTurnId = 'input-
     stream,
   }
 }
+
+test('controller starts microphone capture only after the WebSocket is open', async () => {
+  const harness = createHarness({ waitForStreamOpen: true })
+  let started = false
+  const monitoring = harness.controller.startMonitoring().then((resources) => {
+    started = true
+    return resources
+  })
+
+  await nextTick()
+  assert.equal(harness.captureOptions, undefined)
+  assert.equal(started, false)
+
+  harness.resolveStreamOpen()
+  await monitoring
+
+  assert.notEqual(harness.captureOptions, undefined)
+  assert.equal(started, true)
+  await harness.controller.close()
+})
 
 test('controller waits for CANCELLED before sending the new START and suppresses duplicate BARGE_IN', async () => {
   const harness = createHarness()
