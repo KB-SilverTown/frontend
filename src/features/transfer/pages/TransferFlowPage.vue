@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import TransferFlowPanel from '@/features/transfer/components/TransferFlowPanel.vue'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
@@ -18,11 +18,6 @@ const pin = ref('')
 const guardianCode = ref('')
 const riskPurpose = ref('')
 
-onBeforeRouteLeave((to) => {
-  if (to.name !== 'transfer-screen') {
-    transfer.reset()
-  }
-})
 const titles = {
   'transfer-recipient-select': ['받는 분 선택', '받는 분을 직접 골라주세요.', '다음'],
   'transfer-recipient-confirm': ['이분이 맞나요', '받는 분을 직접 골라주세요.', '다음'],

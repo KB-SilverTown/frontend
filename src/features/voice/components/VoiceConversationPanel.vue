@@ -364,6 +364,11 @@ watch(
 )
 
 onMounted(() => {
+  if (isTransfer.value) {
+    void listen()
+    return
+  }
+
   void ensureSession().catch((error) => {
     actionError.value = error?.message || '음성 안내를 준비하지 못했어요. 화면으로 진행해 주세요.'
   })

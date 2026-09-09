@@ -21,6 +21,10 @@ const statusPageSource = readFileSync(
   new URL('../../../src/features/living/pages/LivingStatusPage.vue', import.meta.url),
   'utf8',
 )
+const accountPageSource = readFileSync(
+  new URL('../../../src/features/living/pages/LivingAccountPage.vue', import.meta.url),
+  'utf8',
+)
 
 test('living routes canonicalize every design id and reject unknown screens', () => {
   for (let number = 2; number <= 26; number += 1) {
@@ -54,11 +58,22 @@ test('living reminder page keeps reminder loading and explicit CRUD contracts', 
   assert.match(reminderPageSource, /serviceData\.updateReminder/)
   assert.match(reminderPageSource, /serviceData\.cancelReminder/)
   assert.match(reminderPageSource, /living-reminders-error/)
+  assert.match(reminderPageSource, /isList\.value \|\| isEmpty\.value/)
+  assert.match(reminderPageSource, /'알림 추가'/)
 })
 
 test('living branch and status pages use native location and feature routes', () => {
   assert.match(branchPageSource, /getCurrentLocation/)
+  assert.match(branchPageSource, /location\?\.coords\?\.latitude/)
+  assert.match(branchPageSource, /location\?\.coords\?\.longitude/)
   assert.match(branchPageSource, /serviceData\.loadMobileBranches/)
   assert.match(statusPageSource, /name: 'living-screen'/)
   assert.match(statusPageSource, /living-reminder-arrived/)
+})
+
+test('living accounts restore the data-backed account list after the route refactor', () => {
+  assert.match(routePageSource, /LivingAccountPage/)
+  assert.match(accountPageSource, /serviceData\.loadAccounts/)
+  assert.match(accountPageSource, /serviceData\.loading\.accounts/)
+  assert.match(accountPageSource, /serviceData\.errors\.accounts/)
 })

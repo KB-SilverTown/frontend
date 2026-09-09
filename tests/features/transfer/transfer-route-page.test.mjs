@@ -21,6 +21,10 @@ const statusPage = readFileSync(
   new URL('../../../src/features/transfer/pages/TransferStatusPage.vue', import.meta.url),
   'utf8',
 )
+const transferVoicePanel = readFileSync(
+  new URL('../../../src/features/transfer/components/TransferVoicePanel.vue', import.meta.url),
+  'utf8',
+)
 
 const transferShell = readFileSync(
   new URL('../../../src/features/transfer/components/TransferPageShell.vue', import.meta.url),
@@ -46,8 +50,12 @@ test('transfer route page delegates flow, schedule, and status without the legac
 })
 
 test('transfer listening renders the transfer voice panel with keyboard fallback', () => {
-  assert.match(statusPage, /VoiceConversationPanel/)
-  assert.match(statusPage, /entry-point="TRANSFER"/)
+  assert.match(statusPage, /TransferVoicePanel/)
+  assert.match(transferVoicePanel, /transfer-voice-stage/)
+  assert.match(transferVoicePanel, /transfer-voice-wave/)
+  assert.match(transferVoicePanel, /transfer-voice-keyboard/)
+  assert.match(transferVoicePanel, /onMounted\(\(\) => \{\s*void listen\(\)/)
+  assert.doesNotMatch(transferVoicePanel, /draftSummary|recipientCandidates|amountCandidates/)
   assert.match(statusPage, /isListeningScreen \? '' : state\[2\]/)
   assert.match(statusPage, /if \(isListeningScreen\.value\) return/)
 })
@@ -81,12 +89,5 @@ test('transfer keeps action buttons in the body and returns home from every back
   for (const page of [flowPage, schedulePage, statusPage]) {
     assert.match(page, /@back="router\.push\(\{ name: 'transfer-home' \}\)"/)
     assert.doesNotMatch(page, /goBackOrReplace/)
-  }
-})
-
-test('transfer clears draft values only when it leaves the transfer flow', () => {
-  for (const page of [flowPage, statusPage]) {
-    assert.match(page, /onBeforeRouteLeave/)
-    assert.match(page, /if \(to\.name !== 'transfer-screen'\) \{\s*transfer\.reset\(\)/)
   }
 })

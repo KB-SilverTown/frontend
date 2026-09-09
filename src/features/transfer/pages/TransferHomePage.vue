@@ -5,17 +5,15 @@ import { useRouter } from 'vue-router'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { withAppLoading } from '@/shared/services/appLoading.js'
-import {
-  isTransferDraftExpired,
-  loadTransferDraft,
-} from '@/features/transfer/services/transferDraft.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
+import { useVoiceStore } from '@/features/voice/stores/voice.js'
 
 const router = useRouter()
 const serviceData = useServiceDataStore()
 const transferStore = useTransferStore()
 
+const voiceStore = useVoiceStore()
 const primaryAccount = computed(() => serviceData.accounts[0] || null)
 const balanceLabel = computed(() => {
   const balance = Number(primaryAccount.value?.balance)
@@ -23,35 +21,10 @@ const balanceLabel = computed(() => {
   return serviceData.loading.accounts ? '잔액을 불러오는 중' : '1,240,000원'
 })
 
-/**
- * 마무리하지 못한 송금이 있으면 알려준다.
- * 오래 열어둔 초안은 이어서 보내지 않고 시간이 지났음을 알린 뒤 처음부터 다시 하게 한다.
- */
-async function checkUnfinishedTransfer() {
-  const draft = loadTransferDraft()
-  if (!draft) return
-
-  if (isTransferDraftExpired(draft)) {
-    transferStore.discardDraft()
-    await router.replace({
-      name: 'transfer-screen',
-      params: { screenKey: 'transfer-expired' },
-    })
-    return
-  }
-
-  const restored = await transferStore.restoreDraft()
-  if (!restored) return
-
-  await router.replace({
-    name: 'transfer-screen',
-    params: { screenKey: 'transfer-existing-plan' },
-  })
-}
-
 onMounted(() => {
+  transferStore.reset()
+  voiceStore.reset()
   withAppLoading(() => serviceData.loadAccounts({ active: true }).catch(() => {}))
-  checkUnfinishedTransfer().catch(() => {})
 })
 
 function startVoiceTransfer() {
