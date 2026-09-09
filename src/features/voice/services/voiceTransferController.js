@@ -261,6 +261,14 @@ export function createTransferVoiceController(options = {}) {
       resetVad()
       return
     }
+    // START_ACK 이전에는 서버가 아직 PCM 프레임을 받을 수 없다. 이 구간에서 VAD가
+    // 발화 종료를 감지해도 STOP을 보내면 START 다음에 오디오 없이 STOP이 도착해
+    // Azure가 NoMatch를 반환할 수 있다. 종료 의도만 보관했다가 ACK 후 버퍼를 먼저
+    // 전송한 다음 STOP을 보낸다.
+    if (inputActive && !startAcknowledged) {
+      if (result.speechEnd) speechEndedBeforeStart = true
+      return
+    }
     if (result.speechStart && !inputActive) {
       void beginInput().catch((error) => {
         if (!closed) onError(error)
