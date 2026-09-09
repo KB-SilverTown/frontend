@@ -1,0 +1,122 @@
+.bill-payment-number-device,
+.bill-payment-number-device .app-header,
+.bill-payment-number-device .app-main,
+.bill-payment-number-device .app-actions {
+  background: var(--card);
+}
+
+.bill-payment-number-main {
+  padding-top: 22px;
+}
+
+.bill-payment-number-heading > p {
+  margin-bottom: 18px;
+}
+
+.bill-payment-number-status,
+.bill-payment-number-error {
+  margin: 0 0 14px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.bill-payment-number-status {
+  border: 1px solid var(--border);
+  background: var(--muted);
+}
+
+.bill-payment-number-error {
+  display: grid;
+  gap: 12px;
+  border: 2px solid color-mix(in srgb, var(--destructive) 48%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 9%, var(--card));
+  color: var(--destructive);
+}
+
+.bill-payment-number-error p {
+  margin: 0;
+}
+
+.bill-payment-number-card {
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 6px 16px rgb(23 63 82 / 8%);
+}
+
+.bill-payment-number-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bill-payment-number-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.bill-payment-number-hero strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.bill-payment-number-hero p,
+.bill-payment-number-note {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+}
+
+.bill-payment-number-value {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--muted);
+}
+
+.bill-payment-number-value dt {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  font-weight: 750;
+}
+
+.bill-payment-number-value dd {
+  margin: 0;
+  color: var(--foreground);
+  font-size: clamp(1.2rem, 4vw, 1.65rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bill-payment-number-note {
+  margin: 0;
+}
+
+.bill-payment-number-note b {
+  color: var(--foreground);
+}
+
+.bill-payment-number-actions {
+  padding-top: 8px;
+}
