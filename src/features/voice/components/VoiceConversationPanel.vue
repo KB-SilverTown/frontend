@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Button } from '@/shared/components/ui/button'
@@ -36,6 +36,7 @@ const END_GUIDANCE_TIMEOUT_MS = 8_000
 
 let noResponseTimer = null
 let reannounced = false
+let sessionPromise = null
 
 /**
  * 서버는 requiredSlot과 draftSummary를 스키마가 정해지지 않은 JSON으로 내려준다.
@@ -216,10 +217,14 @@ async function endByNoResponse() {
   }
 }
 
-async function ensureSession() {
-  if (voiceStore.sessionId) return
+function ensureSession() {
+  if (voiceStore.sessionId) return Promise.resolve()
+  if (sessionPromise) return sessionPromise
   // 음성 토큰은 재생 직전에 스토어가 알아서 받고 갱신한다.
-  await voiceStore.startSession(props.entryPoint)
+  sessionPromise = voiceStore.startSession(props.entryPoint).finally(() => {
+    sessionPromise = null
+  })
+  return sessionPromise
 }
 
 async function listen() {
@@ -357,6 +362,12 @@ watch(
     if (cancelled) leaveAfterGuidance()
   },
 )
+
+onMounted(() => {
+  void ensureSession().catch((error) => {
+    actionError.value = error?.message || '음성 안내를 준비하지 못했어요. 화면으로 진행해 주세요.'
+  })
+})
 
 onBeforeUnmount(() => {
   clearNoResponseTimer()
