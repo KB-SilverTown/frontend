@@ -175,13 +175,24 @@ onBeforeUnmount(() => {
       <div
         aria-live="polite"
         class="voice-settings-preview-card"
+        :class="{ 'is-playing': previewState === 'playing' }"
         role="status"
       >
         <span
           aria-hidden="true"
-          class="voice-settings-preview-icon"
-          >♪</span
+          class="voice-settings-preview-mic"
+          >●</span
         >
+        <span
+          :class="['voice-settings-preview-wave', { 'is-active': previewState === 'playing' }]"
+          aria-hidden="true"
+        >
+          <i
+            v-for="height in [14, 28, 42, 54, 42, 28, 14]"
+            :key="height"
+            :style="{ height: `${height}px` }"
+          />
+        </span>
         <strong>{{ selectedVoice?.label || '선택한 목소리' }}</strong>
         <p>{{ previewStatus }}</p>
       </div>

@@ -172,3 +172,275 @@
 .voice-settings-options-five .voice-settings-option:nth-child(3) {
   grid-column: 1 / -1;
 }
+
+.voice-conversation-panel {
+  display: grid;
+  gap: 12px;
+  padding: 2px;
+  border-radius: 22px;
+  background: var(--card);
+}
+
+.voice-conversation-stage {
+  position: relative;
+  min-height: 168px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #acd7ba, #84b99a);
+  color: var(--primary-foreground);
+  cursor: pointer;
+}
+
+.voice-conversation-stage::after {
+  content: '';
+  position: absolute;
+  right: -30px;
+  bottom: -58px;
+  left: -30px;
+  height: 105px;
+  border-radius: 50% 50% 0 0;
+  background: rgb(71 138 105 / 22%);
+}
+
+.voice-conversation-stage:disabled {
+  cursor: wait;
+}
+
+.voice-conversation-rings,
+.voice-conversation-mic,
+.voice-conversation-wave,
+.voice-conversation-status {
+  position: absolute;
+  z-index: 1;
+}
+
+.voice-conversation-rings {
+  top: 16px;
+  width: 61px;
+  height: 61px;
+}
+
+.voice-conversation-rings i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(255 255 255 / 80%);
+  border-radius: 50%;
+}
+
+.voice-conversation-rings i:nth-child(2) {
+  inset: 6px;
+}
+
+.voice-conversation-rings i:nth-child(3) {
+  inset: 12px;
+}
+
+.voice-conversation-mic {
+  top: 34px;
+  width: 16px;
+  height: 22px;
+  border-radius: 9px;
+  background: var(--primary-foreground);
+}
+
+.voice-conversation-mic::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  bottom: -5px;
+  left: -3px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-radius: 0 0 9px 9px;
+}
+
+.voice-conversation-wave {
+  bottom: 42px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 55px;
+}
+
+.voice-conversation-wave i {
+  width: 4px;
+  border-radius: 99px;
+  background: var(--primary-foreground);
+  transform: scaleY(0.36);
+}
+
+.voice-conversation-wave.is-active i {
+  animation: voice-conversation-wave 720ms ease-in-out infinite alternate;
+}
+
+.voice-conversation-wave.is-active i:nth-child(2n) {
+  animation-delay: 120ms;
+}
+
+.voice-conversation-wave.is-active i:nth-child(3n) {
+  animation-delay: 240ms;
+}
+
+.voice-conversation-status {
+  bottom: 14px;
+  padding: 5px 13px;
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.voice-conversation-status b,
+.voice-conversation-transcript b {
+  color: var(--primary);
+}
+
+.voice-conversation-guidance {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+  font-weight: 850;
+}
+
+.voice-conversation-correction,
+.voice-conversation-transcript {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+.voice-conversation-correction {
+  background: var(--muted);
+}
+
+.voice-conversation-transcript {
+  border: 2px solid var(--primary);
+  font-weight: 750;
+}
+
+.voice-conversation-transcript.is-active {
+  background: color-mix(in srgb, var(--muted) 48%, var(--card));
+}
+
+@keyframes voice-conversation-wave {
+  from {
+    transform: scaleY(0.36);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-conversation-wave.is-active i {
+    animation: none;
+    transform: scaleY(0.72);
+  }
+}
+
+.voice-settings-preview-card.is-playing {
+  border-color: var(--primary);
+}
+
+.voice-settings-preview-mic {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 25px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--primary);
+  color: transparent;
+  font-size: 0;
+}
+
+.voice-settings-preview-mic::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  bottom: -5px;
+  left: -3px;
+  height: 10px;
+  border: 2px solid var(--primary);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.voice-settings-preview-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 56px;
+}
+
+.voice-settings-preview-wave i {
+  width: 4px;
+  border-radius: 99px;
+  background: var(--primary);
+  transform: scaleY(0.36);
+}
+
+.voice-settings-preview-wave.is-active i {
+  animation: voice-settings-preview-wave 720ms ease-in-out infinite alternate;
+}
+
+.voice-settings-preview-wave.is-active i:nth-child(2n) {
+  animation-delay: 120ms;
+}
+
+.voice-settings-preview-wave.is-active i:nth-child(3n) {
+  animation-delay: 240ms;
+}
+
+@keyframes voice-settings-preview-wave {
+  from {
+    transform: scaleY(0.36);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-settings-preview-wave.is-active i {
+    animation: none;
+    transform: scaleY(0.72);
+  }
+}
+
+/* Android WebView에서는 긴 인식 문구가 그리드의 최소 폭을 넓히지 않도록 한다. */
+.voice-conversation-panel,
+.voice-conversation-panel :is(div, section, p, button, input) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.voice-conversation-panel,
+.voice-conversation-stage,
+.voice-conversation-panel > .flex,
+.voice-conversation-panel input {
+  width: 100%;
+}
+
+.voice-conversation-panel input {
+  min-width: 0;
+}
+
+.voice-conversation-panel :is(button, strong, span, p) {
+  overflow-wrap: anywhere;
+}

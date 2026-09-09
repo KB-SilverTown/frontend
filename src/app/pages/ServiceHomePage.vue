@@ -116,6 +116,7 @@ function startVoiceAssist() {
   router.push({
     name: 'voice-screen',
     params: { screenKey: 'voice-enabled' },
+    query: { source: service.value },
   })
 }
 </script>
