@@ -563,7 +563,8 @@
 .mobile-branch-select {
   display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
   min-height: var(--touch-target-min);
   padding: 12px 18px;
@@ -590,6 +591,8 @@
 .mobile-branch-select-indicator {
   display: inline-grid;
   place-items: center;
+  flex: 0 0 24px;
+  order: 2;
   width: 24px;
   height: 24px;
   border: 2px solid currentColor;
@@ -609,12 +612,13 @@
 
 .mobile-branch-card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
 .mobile-branch-card-header strong {
+  min-width: 0;
   font-size: 21px;
   line-height: 1.32;
   font-weight: 800;
@@ -624,7 +628,9 @@
   flex: 0 0 auto;
   color: var(--primary-foreground);
   font-size: 18px;
+  line-height: 1.25;
   font-weight: 800;
+  text-align: right;
 }
 
 .mobile-branch-address {

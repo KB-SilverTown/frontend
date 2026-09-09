@@ -512,6 +512,33 @@ test('mobile branch screen loads nearby data, renders card fields, and guards di
   )
 })
 
+test('mobile branch selection keeps the label, checkmark, and distance aligned on narrow screens', () => {
+  const selectBlock = screenContentStyleSource.match(/\.mobile-branch-select\s*\{([\s\S]*?)\}/)?.[1]
+  const indicatorBlock = screenContentStyleSource.match(
+    /\.mobile-branch-select-indicator\s*\{([\s\S]*?)\}/,
+  )?.[1]
+  const cardHeaderBlock = screenContentStyleSource.match(
+    /\.mobile-branch-card-header\s*\{([\s\S]*?)\}/,
+  )?.[1]
+  const selectTypographyBlock = serviceStyleSource.match(
+    /\.service-route-device \.mobile-branch-select\s*\{([\s\S]*?)\}/,
+  )?.[1]
+
+  assert.ok(selectBlock, 'mobile branch selection should have its own layout rule')
+  assert.match(selectBlock, /justify-content:\s*space-between;/)
+  assert.ok(indicatorBlock, 'mobile branch selection should expose a dedicated checkmark')
+  assert.match(indicatorBlock, /order:\s*2;/)
+  assert.match(indicatorBlock, /flex:\s*0 0 24px;/)
+  assert.ok(cardHeaderBlock, 'mobile branch name and distance should have a dedicated layout rule')
+  assert.match(cardHeaderBlock, /align-items:\s*center;/)
+  assert.ok(
+    selectTypographyBlock,
+    'selection label should override the generic action-button scale',
+  )
+  assert.match(selectTypographyBlock, /font-size:\s*var\(--font-size-body\);/)
+  assert.match(selectTypographyBlock, /line-height:\s*1\.25;/)
+})
+
 test('mobile branch presentation renders the three agreed MVP data shapes', () => {
   const branches = [
     {

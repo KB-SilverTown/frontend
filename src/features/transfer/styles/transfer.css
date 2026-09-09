@@ -834,6 +834,11 @@
   font-weight: 800;
 }
 
+.service-route-device .mobile-branch-select {
+  font-size: var(--font-size-body);
+  line-height: 1.25;
+}
+
 .transfer-pin-form {
   display: grid;
   gap: 6px;
