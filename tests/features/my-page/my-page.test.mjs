@@ -61,7 +61,7 @@ test('large font option previews the large body text size', () => {
   assert.match(fontSizeSource, /class="font-size-option font-size-option-large"/)
   assert.match(
     styleSource,
-    /\.font-size-option-large\s*\{[\s\S]*?font-size:\s*max\(var\(--font-size-body\),\s*21px\);/,
+    /\.font-size-option-large\s*\{[\s\S]*?font-size:\s*max\(var\(--font-size-body\),\s*23px\);/,
   )
 })
 

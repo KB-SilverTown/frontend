@@ -32,7 +32,7 @@ function goBack() {
 
 <template>
   <div class="app-stage">
-    <article class="mobile-app-shell my-page-device">
+    <article class="mobile-app-shell my-page-device font-size-page">
       <header class="app-header">
         <Button
           :aria-label="isLoginFontSize ? '로그인으로 돌아가기' : '마이페이지로 돌아가기'"
