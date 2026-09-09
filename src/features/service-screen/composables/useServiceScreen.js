@@ -17,6 +17,8 @@ import {
   takeBillPhoto,
 } from '@/shared/native/nativeCapabilities.js'
 import { mobileBranchId } from '@/features/living/mobile-branch/presentation.js'
+import { profileApi } from '@/features/my-page/api/profile.js'
+import { profileRows as presentProfileRows } from '@/features/my-page/services/profilePresentation.js'
 import { useBillStore } from '@/features/bills/stores/bill.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
@@ -60,6 +62,9 @@ export function useServiceScreen() {
   const planAmount = ref('')
   const planDay = ref('')
   const planRepeat = ref('MONTHLY')
+  const profile = ref(null)
+  const profileLoading = ref(false)
+  const profileError = ref('')
   let loadSequence = 0
 
   const planTargetId = computed(() => String(route.query.planId || '').trim())
@@ -181,6 +186,10 @@ export function useServiceScreen() {
   const isMobileBranchScreen = computed(
     () => isMobileBranchListScreen.value || isMobileBranchDetailScreen.value,
   )
+  const isProfileEditScreen = computed(
+    () => service.value === 'living' && screenKey.value === 'living-profile-edit',
+  )
+  const profileRows = computed(() => presentProfileRows(profile.value || {}))
   const mobileBranchLocationError = ref('')
   const mobileBranchLocationLoading = ref(false)
   const selectedMobileBranchId = ref('')
@@ -719,6 +728,7 @@ export function useServiceScreen() {
     }
 
     if (currentService === 'living') {
+      if (currentScreenId === 'living-profile-edit') await loadProfile()
       if (
         ['living-accounts', 'living-accounts-empty', 'living-accounts-error'].includes(
           currentScreenId,
@@ -817,6 +827,21 @@ export function useServiceScreen() {
     }
 
     return { redirected: false }
+  }
+
+  async function loadProfile() {
+    profileLoading.value = true
+    profileError.value = ''
+
+    try {
+      profile.value = await profileApi.get()
+    } catch (error) {
+      profile.value = null
+      profileError.value =
+        error?.message || '내 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'
+    } finally {
+      profileLoading.value = false
+    }
   }
 
   function mobileBranchLocationMessage(error) {
@@ -1790,6 +1815,9 @@ export function useServiceScreen() {
     planAmount,
     planDay,
     planRepeat,
+    profile,
+    profileLoading,
+    profileError,
     planTargetId,
     PLAN_SCREENS,
     isPlanScreen,
@@ -1823,6 +1851,8 @@ export function useServiceScreen() {
     isMobileBranchListScreen,
     isMobileBranchDetailScreen,
     isMobileBranchScreen,
+    isProfileEditScreen,
+    profileRows,
     mobileBranchLocationError,
     mobileBranchLocationLoading,
     selectedMobileBranchId,
@@ -1874,6 +1904,7 @@ export function useServiceScreen() {
     normalizeTransferAmount,
     parsedTransferAmount,
     loadContext,
+    loadProfile,
     mobileBranchLocationMessage,
     loadMobileBranchData,
     loadScreen,

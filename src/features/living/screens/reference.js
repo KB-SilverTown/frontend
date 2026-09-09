@@ -158,7 +158,7 @@ export default [
   {
     key: 'living-profile-edit',
     title: '내 정보 고치기',
-    description: '이름과 연락처를 바꿉니다.',
+    description: '등록된 내 정보를 확인합니다.',
     contentHtml:
       '<div class="field"><span>이름</span><b>김순자</b></div><div class="field focus"><span>휴대전화</span><b>010-0000-0000</b></div><div class="field"><span>주소</span><b>서울 성동구</b></div>',
     primaryLabel: '저장하기',
