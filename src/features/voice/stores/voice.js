@@ -591,7 +591,10 @@ export const useVoiceStore = defineStore('voice', () => {
    */
   async function sendUiAction(actionType, itemId = null) {
     const card = displayCard.value
-    const sourceTurnId = lastTurn.value?.turnId
+    // 인터랙션 카드는 AI 응답 턴으로 발급된다. BACKEND_STREAM의 turnId는
+    // 사용자 입력 ID이므로 이를 보내면 서버의 카드 버전 검증에서 409가 난다.
+    // UI 액션 응답은 responseTurnId를 turnId로 저장하므로 기존 계약도 유지한다.
+    const sourceTurnId = lastTurn.value?.aiTurnId || lastTurn.value?.turnId
 
     if (!card?.cardId || !sourceTurnId) {
       error.value = toUserError({
