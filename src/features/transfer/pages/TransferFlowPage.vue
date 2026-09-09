@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TransferFlowPanel from '@/features/transfer/components/TransferFlowPanel.vue'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
+import { isMockTransferEnabled } from '@/features/transfer/api/mockTransfer.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
@@ -12,6 +13,7 @@ const router = useRouter()
 const transfer = useTransferStore()
 const plans = useTransferPlanStore()
 const serviceData = useServiceDataStore()
+const mockMode = isMockTransferEnabled()
 const busy = ref(false)
 const error = ref('')
 const pin = ref('')
@@ -154,10 +156,15 @@ async function primary() {
       if (!/^\d{6}$/.test(pin.value)) throw new Error('송금 PIN 6자리를 입력해 주세요.')
       const authenticated = await transfer.authenticate({ pin: pin.value })
       pin.value = ''
-      await router.push(
-        flowRoute(
-          authenticated?.authenticated ? 'transfer-executing' : 'transfer-authentication-expired',
-        ),
+      if (!authenticated?.authenticated) {
+        await router.push(flowRoute('transfer-authentication-expired'))
+        return
+      }
+      const result = await transfer.execute()
+      if (result?.status === 'SUCCESS' && transfer.planId && plans.markSent(transfer.planId))
+        transfer.clearPlanId()
+      await router.replace(
+        flowRoute(result?.status === 'SUCCESS' ? 'transfer-complete' : 'transfer-failed'),
       )
       return
     }
@@ -235,7 +242,8 @@ watch(
     ><template #error>{{ error }}</template
     ><TransferFlowPanel
       v-if="isCorePanel"
-      :screen-key="screenKey" /><label
+      :screen-key="screenKey"
+    /><label
       v-if="screenKey === 'transfer-risk-confirm'"
       class="service-route-input-field"
       ><span>송금 목적 (선택)</span
@@ -254,12 +262,19 @@ watch(
         maxlength="12"
         autocomplete="one-time-code"
         inputmode="numeric"
-        type="password" /><input
+        type="password"
+      /><input
         v-else
         v-model="pin"
         maxlength="6"
         autocomplete="one-time-code"
         inputmode="numeric"
-        type="password" /></label
-  ></TransferPageShell>
+        type="password"
+      /><small
+        v-if="mockMode && !guardianPending"
+        class="text-[15px] text-muted-foreground"
+        >시연용 PIN은 123456입니다.</small
+      ></label
+    ></TransferPageShell
+  >
 </template>
