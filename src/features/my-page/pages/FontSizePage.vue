@@ -32,7 +32,7 @@ function goBack() {
 
 <template>
   <div class="app-stage">
-    <article class="mobile-app-shell my-page-device font-size-page">
+    <article class="mobile-app-shell my-page-device">
       <header class="app-header">
         <Button
           :aria-label="isLoginFontSize ? '로그인으로 돌아가기' : '마이페이지로 돌아가기'"
@@ -56,7 +56,7 @@ function goBack() {
           <p>화면을 보기 편한 크기로 선택해 주세요.</p>
         </section>
 
-        <fieldset class="font-size-picker">
+        <fieldset class="font-size-picker font-size-page">
           <legend>글씨 크기 선택</legend>
           <div
             class="font-size-options"

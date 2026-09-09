@@ -15,8 +15,9 @@ test('large font option previews a size four pixels larger than the standard bod
   assert.ok(onboardingStyleSource.includes('font-size: max(var(--font-size-body), 23px);'))
 })
 
-test('font size settings keep their typography independent from the selected scale', () => {
-  assert.ok(fontSizePageSource.includes('class="mobile-app-shell my-page-device font-size-page"'))
+test('font size picker keeps its typography independent from the selected scale', () => {
+  assert.ok(fontSizePageSource.includes('class="mobile-app-shell my-page-device"'))
+  assert.ok(fontSizePageSource.includes('class="font-size-picker font-size-page"'))
 
   const pageTokenBlock = onboardingStyleSource.split('.font-size-page {')[1]?.split('}')[0]
 
