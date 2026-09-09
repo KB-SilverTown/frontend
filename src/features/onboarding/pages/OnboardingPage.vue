@@ -534,7 +534,7 @@ const {
         <span class="status-icon">✓</span>
         <span
           ><b>연락처 · 카메라 · 위치 · 마이크</b
-          ><small>이해했어요를 누르면 필요한 OS 권한을 한 번에 요청합니다.</small></span
+          ><small>가입을 시작하기 전에 필요한 OS 권한을 한 번에 요청합니다.</small></span
         >
       </div>
       <div class="segment-grid permission-grid">
