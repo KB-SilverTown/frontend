@@ -1185,3 +1185,41 @@
     transform: scaleY(1);
   }
 }
+
+/* Android WebView에서 음성 카드와 키보드 폼이 본문 밖으로 넓어지지 않도록 고정한다. */
+.transfer-voice-panel {
+  width: min(100%, calc(100vw - 48px));
+  max-width: calc(100vw - 48px);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.transfer-voice-panel :is(section, div, span, button, input) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.transfer-voice-stage,
+.transfer-voice-guide,
+.transfer-voice-transcript,
+.transfer-voice-keyboard,
+.transfer-voice-keyboard-form,
+.transfer-voice-keyboard-form input {
+  width: 100%;
+  max-width: 100%;
+}
+
+.transfer-voice-guide span,
+.transfer-voice-card-option,
+.transfer-voice-error {
+  overflow-wrap: anywhere;
+}
+
+.transfer-voice-keyboard {
+  margin-top: 12px;
+}
+
+.transfer-voice-keyboard-form input {
+  min-width: 0;
+}
