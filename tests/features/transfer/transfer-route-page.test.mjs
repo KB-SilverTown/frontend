@@ -17,6 +17,10 @@ const schedulePage = readFileSync(
   new URL('../../../src/features/transfer/pages/TransferSchedulePage.vue', import.meta.url),
   'utf8',
 )
+const statusPage = readFileSync(
+  new URL('../../../src/features/transfer/pages/TransferStatusPage.vue', import.meta.url),
+  'utf8',
+)
 
 test('transfer routes canonicalize every design id and reject unknown screens', () => {
   for (let number = 2; number <= 31; number += 1) {
@@ -35,6 +39,13 @@ test('transfer route page delegates flow, schedule, and status without the legac
   assert.match(routePage, /TransferSchedulePage/)
   assert.match(routePage, /TransferStatusPage/)
   assert.doesNotMatch(routePage, /service-screen|v-html|contentHtml/)
+})
+
+test('transfer listening renders the transfer voice panel with keyboard fallback', () => {
+  assert.match(statusPage, /VoiceConversationPanel/)
+  assert.match(statusPage, /entry-point="TRANSFER"/)
+  assert.match(statusPage, /isListeningScreen \? '' : state\[2\]/)
+  assert.match(statusPage, /if \(isListeningScreen\.value\) return/)
 })
 
 test('transfer flow keeps explicit confirmation, risk, authentication, and execution gates', () => {
