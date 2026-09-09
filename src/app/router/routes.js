@@ -1,4 +1,5 @@
 import { voiceRoutes } from '../../features/voice/routes.js'
+import { billsRoutes } from '../../features/bills/routes.js'
 import { resolveProductionScreen } from '../../features/service-screen/services/productionServiceScreens.js'
 
 function createProductionServiceRoute(service) {
@@ -88,6 +89,7 @@ export const routes = [
     component: () => import('@/features/my-page/pages/FontSizePage.vue'),
   },
   ...voiceRoutes,
+  ...billsRoutes,
   {
     path: '/mypage/transfer-pin',
     name: 'transfer-pin',
@@ -99,7 +101,6 @@ export const routes = [
     redirect: { name: 'my-page' },
   },
   createProductionServiceRoute('transfer'),
-  createProductionServiceRoute('bills'),
   createProductionServiceRoute('living'),
   {
     path: '/design-system',
