@@ -147,9 +147,6 @@ function startVoiceAssist() {
 
       <main class="app-main service-home-main">
         <section class="screen-heading service-home-heading">
-          <span class="service-home-kicker">{{
-            service === 'bills' ? '고지서 · 홈' : '생활금융 · 홈'
-          }}</span>
           <h1>{{ screen.title }}</h1>
           <p>{{ screen.description }}</p>
         </section>

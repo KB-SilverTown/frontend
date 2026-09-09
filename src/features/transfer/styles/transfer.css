@@ -184,15 +184,6 @@
   padding-top: 22px;
 }
 
-.service-home-kicker {
-  display: block;
-  margin-bottom: 14px;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
 .service-home-heading h1 {
   margin-bottom: 8px;
   font-size: var(--font-size-title);
