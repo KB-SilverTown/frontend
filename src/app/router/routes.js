@@ -1,5 +1,6 @@
 import { voiceRoutes } from '../../features/voice/routes.js'
 import { billsRoutes } from '../../features/bills/routes.js'
+import { livingRoutes } from '../../features/living/routes.js'
 import { resolveProductionScreen } from '../../features/service-screen/services/productionServiceScreens.js'
 
 function createProductionServiceRoute(service) {
@@ -90,6 +91,7 @@ export const routes = [
   },
   ...voiceRoutes,
   ...billsRoutes,
+  ...livingRoutes,
   {
     path: '/mypage/transfer-pin',
     name: 'transfer-pin',
@@ -101,7 +103,6 @@ export const routes = [
     redirect: { name: 'my-page' },
   },
   createProductionServiceRoute('transfer'),
-  createProductionServiceRoute('living'),
   {
     path: '/design-system',
     name: 'design-system',
