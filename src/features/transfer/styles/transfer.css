@@ -381,6 +381,10 @@
   font-weight: 750;
 }
 
+.service-route-error:empty {
+  display: none;
+}
+
 .service-route-input-field {
   display: grid;
   gap: 8px;
@@ -490,6 +494,134 @@
 .service-home-primary {
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+.transfer-flow-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.transfer-amount-review,
+.transfer-amount-options,
+.transfer-confirm-card,
+.transfer-result-card {
+  display: grid;
+  gap: 12px;
+}
+
+.transfer-amount-callout {
+  min-height: 126px;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--foreground);
+  color: var(--card);
+  text-align: center;
+}
+
+.transfer-amount-callout span,
+.transfer-amount-callout p {
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 750;
+}
+
+.transfer-amount-callout strong {
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.transfer-amount-callout p {
+  margin: 0;
+}
+
+.transfer-amount-option {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 18px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.transfer-amount-option.is-selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 18%, var(--card));
+}
+
+.transfer-amount-option b {
+  color: var(--primary-foreground);
+}
+
+.transfer-confirm-card,
+.transfer-result-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.transfer-summary-title {
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.transfer-summary-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+
+.transfer-summary-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+  gap: 12px;
+  color: var(--foreground);
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.transfer-summary-row :is(dt, dd) {
+  margin: 0;
+}
+
+.transfer-summary-row :is(dd, b) {
+  font-weight: 850;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.transfer-summary-row.is-amount :is(dd, b) {
+  font-size: 26px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.transfer-summary-account {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.transfer-summary-account small {
+  color: var(--muted-foreground);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .service-route-secondary {

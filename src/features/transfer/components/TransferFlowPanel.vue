@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 
-import { Button } from '@/shared/components/ui/button'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
 
@@ -39,21 +38,33 @@ const failureMessage = computed(
     '은행에서 처리하지 못했어요. 돈은 그대로 있으니 안심하세요.',
 )
 
-const amountText = computed({
-  get: () => (transferStore.draftAmount ? String(transferStore.draftAmount) : ''),
-  set: (value) => transferStore.setAmount(value),
-})
-
 const amountCandidates = computed(() => transferStore.validation?.amountCandidates ?? [])
+const amountOptions = computed(() => {
+  const selected = Number(transferStore.draftAmount)
+  if (!Number.isSafeInteger(selected) || selected <= 0) return []
+
+  const options = [selected, ...amountCandidates.value]
+  if (selected === 50000) options.push(500000)
+  return [...new Set(options.filter((value) => Number.isSafeInteger(Number(value)) && value > 0))]
+})
 
 function formatAmount(value) {
   const amount = Number(value)
   return Number.isFinite(amount) ? `${amount.toLocaleString('ko-KR')}원` : '금액 확인 중'
 }
 
+function spokenAmount(value) {
+  if (Number(value) === 50000) return '오만원'
+  if (Number(value) === 500000) return '오십만원'
+  return formatAmount(value)
+}
+
+function accountName(account) {
+  return account?.accountName || account?.accountType || '계좌'
+}
+
 function accountLabel(account) {
-  const name = account?.accountName || account?.accountType || '계좌'
-  return `${name} · ${account?.accountNumberMasked ?? ''}`.trim()
+  return `${accountName(account)} · ${account?.accountNumberMasked ?? ''}`.trim()
 }
 
 function recipientLabel(candidate) {
@@ -71,7 +82,7 @@ onMounted(() => {
 <template>
   <section
     aria-label="송금 진행"
-    class="flex flex-col gap-5 rounded-[28px] bg-card p-6"
+    class="transfer-flow-panel"
   >
     <div
       v-if="showRecipients"
@@ -149,78 +160,66 @@ onMounted(() => {
 
     <div
       v-if="showAmount"
-      class="flex flex-col gap-3"
+      class="transfer-amount-review"
     >
-      <label
-        class="text-[15px] font-semibold"
-        for="transfer-amount"
+      <section
+        aria-labelledby="transfer-amount-heading"
+        class="transfer-amount-callout"
       >
-        보내실 금액을 적어주세요
-      </label>
-      <input
-        id="transfer-amount"
-        v-model="amountText"
-        class="min-h-16 rounded-2xl border px-5 text-2xl font-bold"
-        inputmode="numeric"
-        maxlength="12"
-        placeholder="예: 50000"
-        type="text"
-      />
-      <p
-        v-if="transferStore.draftAmount"
-        class="text-xl font-bold"
-      >
-        {{ formatAmount(transferStore.draftAmount) }}
-      </p>
-
+        <span id="transfer-amount-heading">확인할 금액</span>
+        <strong>{{ formatAmount(transferStore.draftAmount) }}</strong>
+        <p>{{ spokenAmount(transferStore.draftAmount) }}이 맞습니까?</p>
+      </section>
       <div
-        v-if="transferStore.amountReconfirmRequired && amountCandidates.length"
-        class="flex flex-col gap-3 rounded-2xl bg-muted p-4"
+        v-if="amountOptions.length"
+        class="transfer-amount-options"
         role="radiogroup"
         aria-label="금액 다시 고르기"
       >
-        <strong class="text-[15px]">어느 금액이 맞나요</strong>
-        <Button
-          v-for="value in amountCandidates"
+        <button
+          v-for="value in amountOptions"
           :key="value"
-          class="w-full"
-          variant="secondary"
+          :aria-checked="Number(transferStore.draftAmount) === Number(value)"
+          class="transfer-amount-option"
+          :class="{ 'is-selected': Number(transferStore.draftAmount) === Number(value) }"
+          role="radio"
+          type="button"
           @click="transferStore.setAmount(value)"
         >
-          {{ formatAmount(value) }}
-        </Button>
+          <span>{{ spokenAmount(value) }}</span>
+          <b v-if="Number(transferStore.draftAmount) === Number(value)">✓</b>
+        </button>
       </div>
     </div>
 
     <div
       v-if="showConfirm && prepared"
       aria-label="보내는 내용 확인"
-      class="flex flex-col gap-3 rounded-2xl border p-5"
+      class="transfer-confirm-card"
     >
-      <strong class="text-[15px]">이대로 보낼까요</strong>
-      <div class="flex items-baseline justify-between gap-3 text-xl">
-        <span>받는 분</span>
-        <b>{{ prepared.recipient?.displayName || transferStore.recipientName || '확인 중' }}</b>
-      </div>
-      <div class="flex items-baseline justify-between gap-3 text-2xl">
-        <span>보내는 금액</span>
-        <b>{{ formatAmount(prepared.amount ?? transferStore.amount) }}</b>
-      </div>
-      <div class="flex items-baseline justify-between gap-3 text-xl">
-        <span>출금 계좌</span>
-        <b>{{ accountLabel(transferStore.fromAccount) }}</b>
-      </div>
-      <p
-        v-if="prepared.confirmationText"
-        class="text-lg leading-relaxed"
-      >
-        {{ prepared.confirmationText }}
-      </p>
+      <strong class="transfer-summary-title">이대로 보낼까요?</strong>
+      <dl class="transfer-summary-list">
+        <div class="transfer-summary-row">
+          <dt>받는 분</dt>
+          <dd>{{ prepared.recipient?.displayName || transferStore.recipientName || '확인 중' }}</dd>
+        </div>
+        <div class="transfer-summary-row is-amount">
+          <dt>보내는 금액</dt>
+          <dd>{{ formatAmount(prepared.amount ?? transferStore.amount) }}</dd>
+        </div>
+        <div class="transfer-summary-row">
+          <dt>출금 계좌</dt>
+          <dd class="transfer-summary-account">
+            <span>{{ accountName(transferStore.fromAccount) }}</span>
+            <small>{{ transferStore.fromAccount?.accountNumberMasked }}</small>
+          </dd>
+        </div>
+      </dl>
     </div>
 
     <div
       v-if="showResult"
-      class="flex flex-col gap-3 rounded-2xl border p-5"
+      class="transfer-result-card"
     >
       <template v-if="showFailure">
         <div
@@ -232,18 +231,18 @@ onMounted(() => {
         </div>
         <div
           v-if="result?.amount ?? transferStore.amount"
-          class="flex items-baseline justify-between gap-3 text-xl"
+          class="transfer-summary-row"
         >
-          <span>보내려던 금액</span>
-          <b>{{ formatAmount(result?.amount ?? transferStore.amount) }}</b>
+          <span>보내려던 금액</span
+          ><b>{{ formatAmount(result?.amount ?? transferStore.amount) }}</b>
         </div>
       </template>
       <template v-else-if="result">
-        <div class="flex items-baseline justify-between gap-3 text-2xl">
+        <div class="transfer-summary-row is-amount">
           <span>보낸 금액</span>
           <b>{{ formatAmount(result.amount) }}</b>
         </div>
-        <div class="flex items-baseline justify-between gap-3 text-lg">
+        <div class="transfer-summary-row">
           <span>상태</span>
           <b>{{ result.status === 'SUCCESS' ? '완료' : result.status }}</b>
         </div>

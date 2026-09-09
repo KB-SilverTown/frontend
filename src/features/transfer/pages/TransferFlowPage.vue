@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TransferFlowPanel from '@/features/transfer/components/TransferFlowPanel.vue'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
-import { isMockTransferEnabled } from '@/features/transfer/api/mockTransfer.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
@@ -13,7 +12,6 @@ const router = useRouter()
 const transfer = useTransferStore()
 const plans = useTransferPlanStore()
 const serviceData = useServiceDataStore()
-const mockMode = isMockTransferEnabled()
 const busy = ref(false)
 const error = ref('')
 const pin = ref('')
@@ -24,7 +22,11 @@ const titles = {
   'transfer-recipient-select': ['받는 분 선택', '받는 분을 직접 골라주세요.', '다음'],
   'transfer-recipient-confirm': ['이분이 맞나요', '받는 분을 직접 골라주세요.', '다음'],
   'transfer-account-select': ['어느 계좌에서', '돈이 나갈 계좌를 고릅니다.', '다음'],
-  'transfer-amount-confirm': ['금액 재확인', '보낼 금액을 확인해 주세요.', '이 금액이 맞아요'],
+  'transfer-amount-confirm': [
+    '금액 재확인',
+    '유사 발음 금액은 한 번 더 확인합니다.',
+    '이 금액이 맞아요',
+  ],
   'transfer-confirm': ['최종 확인', '받는 분·금액·계좌를 다시 확인해 주세요.', '확인 후 보내기'],
   'transfer-risk-confirm': ['위험 확인', '송금 목적을 알려주세요.', '답변 제출'],
   'transfer-pending': ['송금 보류', '위험 신호가 있어 송금을 잠시 보류했어요.', '보호자 확인'],
@@ -46,6 +48,13 @@ const titles = {
   'transfer-expired': ['시간이 지났어요', '안전을 위해 거래를 닫았어요.', '처음부터 다시'],
 }
 const page = computed(() => titles[props.screenKey] || ['송금', '송금 내용을 확인합니다.', '확인'])
+const primaryLabel = computed(() => {
+  if (props.screenKey !== 'transfer-amount-confirm') return page.value[2]
+  const amount = Number(transfer.draftAmount)
+  if (amount === 50000) return '오만원이 맞아요'
+  if (amount === 500000) return '오십만원이 맞아요'
+  return amount > 0 ? `${amount.toLocaleString('ko-KR')}원이 맞아요` : page.value[2]
+})
 const guardianPending = computed(() =>
   Boolean(transfer.guardianVerification && !transfer.guardianVerified),
 )
@@ -225,7 +234,7 @@ watch(
   <TransferPageShell
     :title="page[0]"
     :description="page[1]"
-    :primary-label="page[2]"
+    :primary-label="primaryLabel"
     :secondary-label="
       [
         'transfer-existing-plan',
@@ -242,8 +251,7 @@ watch(
     ><template #error>{{ error }}</template
     ><TransferFlowPanel
       v-if="isCorePanel"
-      :screen-key="screenKey"
-    /><label
+      :screen-key="screenKey" /><label
       v-if="screenKey === 'transfer-risk-confirm'"
       class="service-route-input-field"
       ><span>송금 목적 (선택)</span
@@ -262,19 +270,12 @@ watch(
         maxlength="12"
         autocomplete="one-time-code"
         inputmode="numeric"
-        type="password"
-      /><input
+        type="password" /><input
         v-else
         v-model="pin"
         maxlength="6"
         autocomplete="one-time-code"
         inputmode="numeric"
-        type="password"
-      /><small
-        v-if="mockMode && !guardianPending"
-        class="text-[15px] text-muted-foreground"
-        >시연용 PIN은 123456입니다.</small
-      ></label
-    ></TransferPageShell
-  >
+        type="password" /></label
+  ></TransferPageShell>
 </template>
