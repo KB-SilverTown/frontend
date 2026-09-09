@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
+import VoiceConversationPanel from '@/features/voice/components/VoiceConversationPanel.vue'
 import { goBackOrReplace } from '@/shared/lib/navigation.js'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
@@ -67,7 +68,10 @@ const state = computed(
   () =>
     states[props.screenKey] || ['송금 안내', '송금 내용을 확인합니다.', '홈으로', 'transfer-home'],
 )
+const isListeningScreen = computed(() => props.screenKey === 'transfer-listening')
+
 function primary() {
+  if (isListeningScreen.value) return
   const target = state.value[3]
   return router.push(
     target === 'transfer-home'
@@ -80,10 +84,18 @@ function primary() {
   <TransferPageShell
     :title="state[0]"
     :description="state[1]"
-    :primary-label="state[2]"
+    :primary-label="isListeningScreen ? '' : state[2]"
     @back="goBackOrReplace(router, { name: 'transfer-home' })"
     @primary="primary"
-    ><section class="service-route-screen-content screen-content">
+    ><VoiceConversationPanel
+      v-if="isListeningScreen"
+      entry-point="TRANSFER"
+      :screen-key="screenKey"
+    />
+    <section
+      v-else
+      class="service-route-screen-content screen-content"
+    >
       <div class="content">
         <section class="hero">
           <div class="hero-icon">!</div>
