@@ -128,9 +128,29 @@ export const routes = [
     component: () => import('@/views/ServiceHomeView.vue'),
   },
   {
+    path: '/living/session-expired',
+    name: 'living-session-expired',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
     path: '/living/mobile-branches',
     name: 'mobile-branches',
     component: () => import('@/views/MobileBranchView.vue'),
+  },
+  {
+    path: '/living/mobile-branches/location-permission',
+    name: 'living-location-permission',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
+    path: '/living/mobile-branches/empty',
+    name: 'living-branches-empty',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
+    path: '/living/mobile-branches/error',
+    name: 'living-branches-error',
+    component: () => import('@/views/LivingStateView.vue'),
   },
   {
     path: '/living/mobile-branches/:branchId',
@@ -143,6 +163,26 @@ export const routes = [
     component: () => import('@/views/ReminderView.vue'),
   },
   {
+    path: '/living/reminders/empty',
+    name: 'living-reminders-empty',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
+    path: '/living/reminders/error',
+    name: 'living-reminders-error',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
+    path: '/living/reminders/disabled',
+    name: 'living-reminders-disabled',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
+    path: '/living/reminders/arrived',
+    name: 'living-reminder-arrived',
+    component: () => import('@/views/LivingStateView.vue'),
+  },
+  {
     path: '/living/reminders/new',
     name: 'reminder-create',
     component: () => import('@/views/ReminderView.vue'),
@@ -151,6 +191,11 @@ export const routes = [
     path: '/living/reminders/:reminderId/edit',
     name: 'reminder-edit',
     component: () => import('@/views/ReminderView.vue'),
+  },
+  {
+    path: '/living/emergency-contact',
+    name: 'living-emergency-contact-edit',
+    component: () => import('@/views/LivingStateView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

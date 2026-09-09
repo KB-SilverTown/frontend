@@ -1,0 +1,132 @@
+.living-state-device,
+.living-state-device .app-header,
+.living-state-device .app-main,
+.living-state-device .app-actions {
+  background: var(--card);
+}
+
+.living-state-main {
+  padding-top: 22px;
+}
+
+.living-state-heading > p {
+  margin-bottom: 18px;
+}
+
+.living-state-card {
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+  border: 2px solid color-mix(in srgb, var(--primary) 36%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  box-shadow: 0 6px 16px rgb(23 63 82 / 8%);
+}
+
+.living-state-card.is-warning {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  background: color-mix(in srgb, var(--accent) 9%, var(--card));
+}
+
+.living-state-card.is-danger {
+  border-color: color-mix(in srgb, var(--destructive) 48%, var(--border));
+  background: color-mix(in srgb, var(--destructive) 7%, var(--card));
+}
+
+.living-state-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+}
+
+.is-warning .living-state-hero {
+  border-bottom-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.is-danger .living-state-hero {
+  border-bottom-color: color-mix(in srgb, var(--destructive) 25%, var(--border));
+}
+
+.living-state-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.is-warning .living-state-icon {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.is-danger .living-state-icon {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.living-state-hero strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.living-state-hero p,
+.living-state-note {
+  margin: 4px 0 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.45;
+}
+
+.living-state-note {
+  margin: 0;
+  color: var(--foreground);
+}
+
+.living-state-meta,
+.living-state-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 13px;
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.living-state-meta dt,
+.living-state-field span {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  font-weight: 750;
+}
+
+.living-state-meta dd,
+.living-state-field b {
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: 850;
+  text-align: right;
+}
+
+.living-state-actions {
+  padding-top: 8px;
+}
+
+.living-state-notice {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+}
