@@ -23,7 +23,7 @@ const serviceScreens = {
     },
   },
   living: {
-    title: '내 정보',
+    title: '생활금융',
     description: '계좌·알림·이동점포로 이동합니다.',
     groups: [
       [

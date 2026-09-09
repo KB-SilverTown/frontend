@@ -128,6 +128,24 @@ test('production action routes follow the service flow instead of raw screen ord
   })
 })
 
+test('empty living reminder screen returns to the living home instead of browser history', () => {
+  const serviceScreenComposableSource = readFileSync(
+    new URL(
+      '../../../src/features/service-screen/composables/useServiceScreen.js',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+
+  assert.match(
+    serviceScreenComposableSource,
+    /isLivingReminderEmptyScreen[\s\S]*?service\.value === 'living'[\s\S]*?screenKey\.value === 'living-reminders-empty'/,
+  )
+  assert.match(
+    serviceScreenComposableSource,
+    /if \(isLivingReminderEmptyScreen\.value\) return router\.replace\(homeRoute\.value\)/,
+  )
+})
 test('voice selection screens reject legacy routes and allow only the my page flow', () => {
   const voiceRoute = routes.find(({ name }) => name === 'voice-screen')
   const livingRoute = routes.find(({ name }) => name === 'living-screen')
