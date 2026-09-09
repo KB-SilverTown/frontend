@@ -10,11 +10,29 @@ const states = {
   'living-accounts-empty': ['연결 계좌 없음', '연결된 계좌가 없어요.', 'living-accounts'],
   'living-accounts-error': ['계좌 조회 실패', '계좌를 다시 불러와 주세요.', 'living-accounts'],
   'living-session-expired': ['세션 만료', '다시 로그인해 주세요.', 'onboarding'],
+  'living-reminder-arrived': ['납부 알림', '확인할 납부 알림이 있어요.', 'living-reminders'],
   'living-reminders-disabled': [
     '알림이 꺼져 있어요',
     '기기 설정에서 알림을 켜 주세요.',
     'living-reminders',
   ],
+  'living-reminder-speak': [
+    '알림 읽어주기',
+    '알림 내용을 음성으로 들을 수 있어요.',
+    'living-reminders',
+  ],
+  'living-reminder-notice': ['알림 안내', '중요한 납부 일정을 확인해 주세요.', 'living-reminders'],
+  'living-reminder-reading': [
+    '알림을 읽고 있어요',
+    '납부 일정을 안내하고 있습니다.',
+    'living-reminders',
+  ],
+  'living-reminder-quiet-hours': [
+    '알림 쉬는 시간',
+    '조용한 시간에는 알림을 보내지 않아요.',
+    'living-reminders',
+  ],
+  'living-reminder-missed': ['놓친 알림', '확인하지 못한 납부 알림이 있어요.', 'living-reminders'],
   'living-branches-empty': [
     '가까운 곳이 없어요',
     '다른 시간에 다시 찾아 주세요.',
@@ -42,9 +60,11 @@ const state = computed(() => {
   return { title, description, target }
 })
 function primary() {
-  if (state.value.target === 'onboarding')
+  const target = state.value.target
+  if (target === 'onboarding')
     return router.push({ name: 'onboarding', params: { stepId: 'login' } })
-  router.push({ name: state.value.target })
+  if (['living-home', 'my-page'].includes(target)) return router.push({ name: target })
+  return router.push({ name: 'living-screen', params: { screenKey: target } })
 }
 </script>
 <template>

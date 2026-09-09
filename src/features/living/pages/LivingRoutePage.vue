@@ -8,7 +8,15 @@ import LivingStatusPage from '@/features/living/pages/LivingStatusPage.vue'
 
 const route = useRoute()
 const screenKey = computed(() => String(route.params.screenKey || ''))
-const isReminderScreen = computed(() => screenKey.value.startsWith('living-reminder'))
+const isReminderScreen = computed(() =>
+  [
+    'living-reminders',
+    'living-reminder-create',
+    'living-reminder-edit',
+    'living-reminders-empty',
+    'living-reminders-error',
+  ].includes(screenKey.value),
+)
 const isBranchScreen = computed(
   () =>
     screenKey.value.startsWith('living-branch') || screenKey.value === 'living-location-permission',

@@ -10,6 +10,7 @@ const livingScreenAliases = {
   '4-10': 'living-branches',
   '4-11': 'living-branch-detail',
   '4-12': 'living-location-permission',
+  '4-13': 'living-voice-settings',
   '4-14': 'living-profile-edit',
   '4-15': 'living-emergency-contact-edit',
   '4-16': 'living-consents',
@@ -46,7 +47,9 @@ function createLivingGuard(to) {
   const canonicalKey = normalizeLivingScreenKey(screenKey)
 
   if (canonicalKey === 'living-voice-settings') {
-    return { name: 'my-page-voice', params: { screenKey: 'voice-voice-select' }, query: to.query }
+    const target = { name: 'my-page-voice', params: { screenKey: 'voice-voice-select' } }
+    if (to.query && Object.keys(to.query).length) target.query = to.query
+    return target
   }
   if (!livingScreenKeys.has(canonicalKey)) return { name: 'living-home' }
   if (canonicalKey !== screenKey) return canonicalTarget(canonicalKey, to.query)
