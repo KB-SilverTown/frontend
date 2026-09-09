@@ -153,6 +153,14 @@ async function uploadBill(source, capturedImage = null) {
       return
     }
 
+    if (error?.code === 'BILL_FILE_TOO_LARGE') {
+      cleanupBillCamera()
+      pendingBillImage = null
+      clearPendingBillImage()
+      await router.replace({ name: 'bill-file-too-large', query: route.query })
+      return
+    }
+
     if (!String(error?.message || '').toLowerCase().includes('cancel')) {
       actionErrorCode.value = error?.code || ''
       actionError.value = error?.message || '고지서 사진을 준비하지 못했어요. 다시 시도해 주세요.'
