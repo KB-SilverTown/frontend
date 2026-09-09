@@ -21,9 +21,9 @@ const readSource = createSourceReader(import.meta.url)
 const panelSource = readSource('../../../src/features/voice/components/VoiceSettingsPanel.vue')
 const voiceStoreSource = readSource('../../../src/features/voice/stores/voice.js')
 const voiceSettingsStyleSource = readSource('../../../src/features/voice/styles/voice-settings.css')
-const routeViewSource = `${readSource(
-  '../../fixtures/service-screen/composables/useServiceScreen.js',
-)}\n${readSource('../../fixtures/service-screen/pages/ServiceScreenPage.vue')}`
+const voiceSettingsPageSource = readSource(
+  '../../../src/features/voice/pages/VoiceSettingsPage.vue',
+)
 
 test('voice settings expose the requested gender, rate, and pitch choices', () => {
   assert.deepEqual(
@@ -101,10 +101,9 @@ test('preview playback uses the unsaved draft settings', () => {
   assert.match(panelSource, /eqPreset:\s*voiceStore\.draftEqPreset/)
 })
 
-test('service screen uses the interactive panel for the my-page voice flow', () => {
-  assert.match(routeViewSource, /VoiceSettingsPanel/)
-  assert.match(routeViewSource, /isVoiceSettingsSelectScreen/)
-  assert.match(routeViewSource, /isVoiceSettingsPreviewScreen/)
-  assert.match(routeViewSource, /voiceStore\.saveSettings/)
-  assert.match(routeViewSource, /voiceStore\.resetDraftSettings/)
+test('voice settings page uses the interactive panel for the my-page flow', () => {
+  assert.match(voiceSettingsPageSource, /VoiceSettingsPanel/)
+  assert.match(voiceSettingsPageSource, /isPreview/)
+  assert.match(voiceSettingsPageSource, /voiceStore\.saveSettings/)
+  assert.match(voiceSettingsPageSource, /voiceStore\.resetDraftSettings/)
 })
