@@ -1,7 +1,5 @@
-import {
-  isVoiceSettingsScreen,
-  resolveProductionScreen,
-} from '../../features/service-screen/services/productionServiceScreens.js'
+import { voiceRoutes } from '../../features/voice/routes.js'
+import { resolveProductionScreen } from '../../features/service-screen/services/productionServiceScreens.js'
 
 function createProductionServiceRoute(service) {
   return {
@@ -21,13 +19,6 @@ function createProductionServiceRoute(service) {
         }
       }
 
-      if (service === 'voice' && isVoiceSettingsScreen(screenKey)) {
-        return {
-          name: 'my-page-voice',
-          params: { screenKey },
-        }
-      }
-
       if (!screen) {
         return {
           name: service === 'voice' ? 'voice-home' : `${service}-home`,
@@ -43,33 +34,6 @@ function createProductionServiceRoute(service) {
       }
 
       return true
-    },
-  }
-}
-
-function createMyPageVoiceRoute() {
-  return {
-    path: '/mypage/voice/:screenKey',
-    name: 'my-page-voice',
-    component: () => import('@/features/service-screen/pages/ServiceScreenPage.vue'),
-    props: true,
-    meta: { service: 'voice', myPageVoice: true },
-    beforeEnter: (to) => {
-      const screenKey = String(to.params.screenKey || '')
-      if (isVoiceSettingsScreen(screenKey) && resolveProductionScreen('voice', screenKey)) {
-        const screen = resolveProductionScreen('voice', screenKey)
-        if (screen?.screenKey !== screenKey) {
-          return {
-            name: 'my-page-voice',
-            params: { screenKey: screen.screenKey },
-            query: to.query,
-          }
-        }
-
-        return true
-      }
-
-      return { name: 'my-page' }
     },
   }
 }
@@ -123,7 +87,7 @@ export const routes = [
     name: 'my-page-font-size',
     component: () => import('@/features/my-page/pages/FontSizePage.vue'),
   },
-  createMyPageVoiceRoute(),
+  ...voiceRoutes,
   {
     path: '/mypage/transfer-pin',
     name: 'transfer-pin',
@@ -137,7 +101,6 @@ export const routes = [
   createProductionServiceRoute('transfer'),
   createProductionServiceRoute('bills'),
   createProductionServiceRoute('living'),
-  createProductionServiceRoute('voice'),
   {
     path: '/design-system',
     name: 'design-system',
