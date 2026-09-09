@@ -53,6 +53,16 @@ export const routes = [
     component: () => import('@/views/TransferFlowView.vue'),
   },
   {
+    path: '/transfer/guardian',
+    name: 'transfer-guardian',
+    component: () => import('@/views/TransferGuardianView.vue'),
+  },
+  {
+    path: '/transfer/pin',
+    name: 'transfer-pin',
+    component: () => import('@/views/TransferPinView.vue'),
+  },
+  {
     path: '/bills',
     name: 'bills-home',
     component: () => import('@/views/ServiceHomeView.vue'),
