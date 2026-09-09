@@ -78,6 +78,11 @@ export const routes = [
     component: () => import('@/views/BillUnsupportedFormatView.vue'),
   },
   {
+    path: '/bills/unsupported-file',
+    name: 'bill-unsupported-file',
+    component: () => import('@/views/BillUnsupportedFileView.vue'),
+  },
+  {
     path: '/bills/file-too-large',
     name: 'bill-file-too-large',
     component: () => import('@/views/BillFileTooLargeView.vue'),
