@@ -5,7 +5,6 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { apiClient } from '../../../src/shared/api/client.js'
 import { accountsApi } from '../../../src/features/transfer/api/accounts.js'
-import { transfersApi } from '../../../src/features/transfer/api/transfers.js'
 import { useTransferStore } from '../../../src/features/transfer/stores/transfer.js'
 
 test('mock transfer completes the confirmed flow without an HTTP request', async () => {

@@ -25,6 +25,10 @@ const transferVoicePanel = readFileSync(
   new URL('../../../src/features/transfer/components/TransferVoicePanel.vue', import.meta.url),
   'utf8',
 )
+const transferFlowPanel = readFileSync(
+  new URL('../../../src/features/transfer/components/TransferFlowPanel.vue', import.meta.url),
+  'utf8',
+)
 const transferStyles = readFileSync(
   new URL('../../../src/features/transfer/styles/transfer.css', import.meta.url),
   'utf8',
@@ -80,7 +84,12 @@ test('mock listening visibly recognizes a sentence and stages the short confirma
     flowPage,
     /result\?\.status === 'SUCCESS' \? 'transfer-complete' : 'transfer-failed'/,
   )
-  assert.match(flowPage, /시연용 PIN은 123456입니다/)
+  assert.doesNotMatch(flowPage, /시연용/)
+  assert.match(transferFlowPanel, /transfer-amount-review/)
+  assert.match(transferFlowPanel, /확인할 금액/)
+  assert.match(transferFlowPanel, /오만원/)
+  assert.match(transferFlowPanel, /오십만원/)
+  assert.match(transferStyles, /\.service-route-error:empty/)
 })
 
 test('transfer flow keeps explicit confirmation, risk, authentication, and execution gates', () => {
