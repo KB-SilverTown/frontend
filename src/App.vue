@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 
 import AppLoadingOverlay from '@/components/AppLoadingOverlay.vue'
+import VoiceAssistOverlay from '@/components/voice/VoiceAssistOverlay.vue'
 
 let releaseStableViewportHeight = () => {}
 
@@ -38,5 +39,6 @@ onBeforeUnmount(() => {
 
 <template>
   <RouterView />
+  <VoiceAssistOverlay />
   <AppLoadingOverlay />
 </template>
