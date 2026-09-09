@@ -312,3 +312,110 @@ test('backend stream falls back to text when TURN_RESPONSE omits the AI turn ID'
     restoreWindow()
   }
 })
+
+test('late TTS monitor cleanup does not close a newer transfer input stream', async () => {
+  setActivePinia(createPinia())
+  FakeWebSocket.instances.length = 0
+  FakeAudioWorkletNode.instances.length = 0
+
+  const originalIssueStreamTicket = voiceApi.issueStreamTicket
+  const originalIssueSpeechToken = voiceApi.issueSpeechToken
+  const originalCreateSession = voiceApi.createSession
+  const originalNativeCheck = Capacitor.isNativePlatform
+  let resolveInitialTicket
+  let issuedTickets = 0
+  let utterance
+
+  class FakeUtterance {
+    constructor() {
+      this.onend = null
+      this.onerror = null
+    }
+  }
+
+  const restoreWindow = replaceGlobal('window', {
+    AudioContext: FakeAudioContext,
+    SpeechSynthesisUtterance: FakeUtterance,
+    speechSynthesis: {
+      speaking: true,
+      pending: false,
+      getVoices: () => [{ lang: 'ko-KR', name: '테스트 음성' }],
+      speak: (value) => {
+        utterance = value
+      },
+      cancel() {},
+    },
+  })
+  const restoreNavigator = replaceGlobal('navigator', {
+    mediaDevices: {
+      getUserMedia: async () => ({ getTracks: () => [{ stop() {} }] }),
+    },
+  })
+  const restoreWorklet = replaceGlobal('AudioWorkletNode', FakeAudioWorkletNode)
+  const restoreWebSocket = replaceGlobal('WebSocket', FakeWebSocket)
+
+  Capacitor.isNativePlatform = () => false
+  voiceApi.issueSpeechToken = async () => null
+  voiceApi.createSession = async () => ({
+    sessionId: 'session-1',
+    firstPrompt: '송금을 도와드릴게요.',
+    flowType: 'TRANSFER',
+    sttMode: 'BACKEND_STREAM',
+    status: 'LISTENING',
+  })
+  voiceApi.issueStreamTicket = () => {
+    issuedTickets += 1
+    if (issuedTickets === 1) {
+      return new Promise((resolve) => {
+        resolveInitialTicket = resolve
+      })
+    }
+    return Promise.resolve({ ticket: 'new-input-ticket' })
+  }
+
+  let store
+  try {
+    store = useVoiceStore()
+    await store.startSession('TRANSFER')
+    await waitFor(() => resolveInitialTicket && utterance)
+
+    // TTS 종료는 첫 모니터를 닫기 시작하지만 ticket 응답은 아직 도착하지 않은 상태다.
+    utterance.onend()
+    await new Promise((resolve) => setImmediate(resolve))
+
+    const pendingTts = new Promise((resolve) => {
+      const timer = setInterval(() => {
+        if (!store.speaking) {
+          clearInterval(timer)
+          resolve()
+        }
+      }, 0)
+    })
+
+    const pendingInput = store.listenAndSendTurn()
+    const inputSocket = await waitFor(() => FakeWebSocket.instances[0])
+    const inputTurnId = sentJson(inputSocket, 0).inputTurnId
+
+    resolveInitialTicket({ ticket: 'late-tts-ticket' })
+    await pendingTts
+    await new Promise((resolve) => setImmediate(resolve))
+
+    assert.equal(inputSocket.readyState, FakeWebSocket.OPEN)
+    assert.equal(sentJson(inputSocket, 0).type, 'START')
+    assert.equal(store.error, null)
+
+    inputSocket.receive({ type: 'START_ACK', inputTurnId, nextSequence: 0 })
+    await store.stopVoiceResources()
+    await pendingInput.catch(() => {})
+  } finally {
+    await store?.stopVoiceResources?.().catch(() => {})
+    voiceApi.issueStreamTicket = originalIssueStreamTicket
+    voiceApi.issueSpeechToken = originalIssueSpeechToken
+    voiceApi.createSession = originalCreateSession
+    Capacitor.isNativePlatform = originalNativeCheck
+    restoreWebSocket()
+    restoreWorklet()
+    restoreNavigator()
+    restoreWindow()
+  }
+})
