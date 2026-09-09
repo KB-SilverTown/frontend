@@ -1,44 +1,7 @@
 import { voiceRoutes } from '../../features/voice/routes.js'
 import { billsRoutes } from '../../features/bills/routes.js'
 import { livingRoutes } from '../../features/living/routes.js'
-import { resolveProductionScreen } from '../../features/service-screen/services/productionServiceScreens.js'
-
-function createProductionServiceRoute(service) {
-  return {
-    path: `/${service}/:screenKey`,
-    name: `${service}-screen`,
-    component: () => import('@/features/service-screen/pages/ServiceScreenPage.vue'),
-    props: true,
-    meta: { service },
-    beforeEnter: (to) => {
-      const screenKey = String(to.params.screenKey || '')
-      const screen = resolveProductionScreen(service, screenKey)
-
-      if (service === 'living' && screen?.screenKey === 'living-voice-settings') {
-        return {
-          name: 'my-page-voice',
-          params: { screenKey: 'voice-voice-select' },
-        }
-      }
-
-      if (!screen) {
-        return {
-          name: service === 'voice' ? 'voice-home' : `${service}-home`,
-        }
-      }
-
-      if (screen.screenKey !== screenKey) {
-        return {
-          name: screen.routeName ?? `${service}-screen`,
-          params: { screenKey: screen.screenKey },
-          query: to.query,
-        }
-      }
-
-      return true
-    },
-  }
-}
+import { transferRoutes } from '../../features/transfer/routes.js'
 
 export const routes = [
   {
@@ -92,6 +55,7 @@ export const routes = [
   ...voiceRoutes,
   ...billsRoutes,
   ...livingRoutes,
+  ...transferRoutes,
   {
     path: '/mypage/transfer-pin',
     name: 'transfer-pin',
@@ -102,7 +66,6 @@ export const routes = [
     name: 'voice-home',
     redirect: { name: 'my-page' },
   },
-  createProductionServiceRoute('transfer'),
   {
     path: '/design-system',
     name: 'design-system',
