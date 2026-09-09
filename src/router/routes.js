@@ -68,6 +68,11 @@ export const routes = [
     component: () => import('@/views/BillPaymentNumberView.vue'),
   },
   {
+    path: '/bills/:billId/read-accuracy',
+    name: 'bill-read-accuracy',
+    component: () => import('@/views/BillReadAccuracyView.vue'),
+  },
+  {
     path: '/bills/:billId/overdue',
     name: 'bill-overdue',
     component: () => import('@/views/BillDetailView.vue'),
