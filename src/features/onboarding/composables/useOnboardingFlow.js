@@ -31,6 +31,46 @@ import { FONT_SCALE, applyFontScale, readFontScale } from '@/shared/services/fon
 import { goBackOrReplace } from '@/shared/lib/navigation.js'
 import { useOnboardingStore } from '@/features/onboarding/stores/onboarding.js'
 
+const VALIDATION_STEP_LABELS = Object.freeze({
+  consents: '약관 동의',
+  account: '기본 정보',
+  identity: '본인 확인',
+  contact: '주소·휴대전화',
+  finance: '계좌·보호자 정보',
+  voice: '음성 설정',
+})
+
+const VALIDATION_FIELD_LABELS = Object.freeze({
+  consents: '필수 동의',
+  loginId: '아이디',
+  password: '비밀번호',
+  name: '이름',
+  gender: '성별',
+  residentNumberFront: '주민등록번호 앞자리',
+  residentNumberBack: '주민등록번호 뒷자리',
+  postalCode: '우편번호',
+  address: '주소',
+  bankCode: '은행',
+  accountNumber: '계좌번호',
+  phone: '휴대전화 번호',
+  emergencyContactName: '보호자 이름',
+  emergencyContactRelationship: '보호자 관계',
+  emergencyContactPhone: '보호자 휴대전화 번호',
+  ttsVoice: '목소리',
+  speechRateMultiplier: '말하기 속도',
+  volumeMultiplier: '음량',
+})
+
+function formatValidationNotice(result) {
+  const stepLabel = VALIDATION_STEP_LABELS[result.stepId] || '가입 정보'
+  const details = Object.entries(result.fieldErrors || {}).map(
+    ([field, message]) => `${VALIDATION_FIELD_LABELS[field] || field}: ${message}`,
+  )
+
+  return details.length
+    ? `${stepLabel} 단계의 입력을 확인해 주세요. ${details.join(' ')}`
+    : `${stepLabel} 단계의 입력을 확인해 주세요.`
+}
 export function useOnboardingFlow() {
   const route = useRoute()
   const router = useRouter()
@@ -217,7 +257,10 @@ export function useOnboardingFlow() {
     try {
       await requestDevicePermissions()
       const result = await store.submit()
-      if (!result.ok) return
+      if (!result.ok) {
+        if (result.stepId) actionNotice.value = formatValidationNotice(result)
+        return
+      }
       store.finishUiFlow()
       return requestAppIntent('home')
     } finally {

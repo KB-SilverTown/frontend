@@ -14,6 +14,33 @@ async function readOnboardingView() {
   return `${flow}\n${page}`.replace(/\r\n/g, '\n')
 }
 
+test('emergency contact error message only uses emergency contact fields', async () => {
+  const source = await readOnboardingView()
+  const start = source.indexOf("screenId === 'emergency-contact'")
+  const end = source.indexOf('</section>', start)
+  const emergencyContactSection = source.slice(start, end)
+
+  assert.notEqual(start, -1)
+  assert.notEqual(end, -1)
+  assert.doesNotMatch(emergencyContactSection, /Object\.keys\(store\.fieldErrors\)\.length/)
+  assert.match(
+    emergencyContactSection,
+    /store\.fieldErrors\.emergencyContactName[\s\S]*store\.fieldErrors\.emergencyContactRelationship[\s\S]*store\.fieldErrors\.emergencyContactPhone/,
+  )
+})
+
+test('signup validation failure reports the actual step and fields before the request', async () => {
+  const source = await readOnboardingView()
+  const submitFunction = source.match(
+    /async function submitOnboarding\(\)\s*\{([\s\S]*?)\n\s*\}\n\s*function closePostcode/,
+  )?.[1]
+
+  assert.ok(submitFunction)
+  assert.match(submitFunction, /result\.stepId/)
+  assert.match(source, /result\.fieldErrors/)
+  assert.match(submitFunction, /actionNotice\.value/)
+  assert.match(submitFunction, /formatValidationNotice\(result\)/)
+})
 test('permissions step submits signup before completing the UI flow', async () => {
   const source = await readOnboardingView()
   const submitFunction = source.match(

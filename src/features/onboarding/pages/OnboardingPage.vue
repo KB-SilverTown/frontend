@@ -513,7 +513,11 @@ const {
         @update:model-value="handleEmergencyPhoneInput"
       />
       <p
-        v-if="Object.keys(store.fieldErrors).length"
+        v-if="
+          store.fieldErrors.emergencyContactName ||
+          store.fieldErrors.emergencyContactRelationship ||
+          store.fieldErrors.emergencyContactPhone
+        "
         id="emergency-contact-error"
         class="field-error"
         role="alert"
