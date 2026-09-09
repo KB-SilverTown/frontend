@@ -5,20 +5,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { billsApi } from '@/api/bills.js'
 import { withAppLoading } from '@/services/appLoading.js'
-import { presentBillPaymentNumber } from '@/services/billPaymentNumberPresentation.js'
-import { presentBill } from '@/services/billPresentation.js'
-import '@/styles/bill-payment-number.css'
+import { presentBillReadAccuracy } from '@/services/billReadAccuracyPresentation.js'
+import '@/styles/bill-read-accuracy.css'
 
 const route = useRoute()
 const router = useRouter()
 const bill = ref(null)
+const accuracy = computed(() => (bill.value ? presentBillReadAccuracy(bill.value) : null))
 const loading = ref(true)
 const errorMessage = ref('')
 let requestId = 0
 
 const billId = computed(() => String(route.params.billId ?? '').trim())
-const presentedBill = computed(() => (bill.value ? presentBill(bill.value) : null))
-const paymentNumber = computed(() => presentBillPaymentNumber(bill.value))
 
 function extractBill(value) {
   if (value?.bill && typeof value.bill === 'object') return value.bill
@@ -47,12 +45,7 @@ async function loadBill() {
     await withAppLoading(async () => {
       const response = await billsApi.get(billId.value)
       if (currentRequestId !== requestId) return
-
-      const loadedBill = extractBill(response)
-      bill.value = loadedBill
-      if (!presentBillPaymentNumber(loadedBill)) {
-        errorMessage.value = '서버에서 납부번호를 확인하지 못했어요. 다시 시도해 주세요.'
-      }
+      bill.value = extractBill(response)
     })
   } catch (error) {
     if (currentRequestId === requestId) {
@@ -68,23 +61,19 @@ async function loadBill() {
 
 function goBack() {
   if (!billId.value) return leave()
-  return router.push({ name: 'bill-detail', params: { billId: billId.value } })
+  return router.push({ name: 'bill-payment-number', params: { billId: billId.value } })
 }
 
 function leave() {
   return router.push({ name: 'bills-home' })
 }
 
-function openReview() {
-  return router.push({ name: 'bill-review', params: { billId: billId.value } })
-}
-
 function openEdit() {
   return router.push({ name: 'bill-low-confidence', params: { billId: billId.value } })
 }
 
-function openReadAccuracy() {
-  return router.push({ name: 'bill-read-accuracy', params: { billId: billId.value } })
+function openReview() {
+  return router.push({ name: 'bill-review', params: { billId: billId.value } })
 }
 
 watch(() => route.params.billId, loadBill, { immediate: true })
@@ -95,10 +84,10 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-stage">
-    <article class="mobile-app-shell bill-payment-number-device">
+    <article class="mobile-app-shell bill-read-accuracy-device">
       <header class="app-header">
         <Button
-          aria-label="고지서 상세 화면으로 돌아가기"
+          aria-label="납부번호 확인 화면으로 돌아가기"
           class="app-back-button"
           size="icon"
           variant="secondary"
@@ -113,23 +102,23 @@ onBeforeUnmount(() => {
         />
       </header>
 
-      <main class="app-main bill-payment-number-main">
-        <section class="screen-heading bill-payment-number-heading">
-          <h1>납부번호 확인</h1>
-          <p>읽어낸 납부번호가 맞는지 확인해 주세요.</p>
+      <main class="app-main bill-read-accuracy-main">
+        <section class="screen-heading bill-read-accuracy-heading">
+          <h1>읽은 정확도</h1>
+          <p>항목마다 얼마나 확실한지 확인해 주세요.</p>
         </section>
 
         <p
           v-if="loading"
           aria-live="polite"
-          class="bill-payment-number-status"
+          class="bill-read-accuracy-status"
           role="status"
         >
           고지서 정보를 불러오고 있어요.
         </p>
         <section
           v-else-if="errorMessage"
-          class="bill-payment-number-error"
+          class="bill-read-accuracy-error"
           role="alert"
         >
           <p>{{ errorMessage }}</p>
@@ -141,55 +130,60 @@ onBeforeUnmount(() => {
           </Button>
         </section>
         <section
-          v-else-if="paymentNumber"
-          aria-label="납부번호 확인"
-          class="bill-payment-number-card"
+          v-else-if="accuracy"
+          aria-label="고지서 인식 정확도"
+          class="bill-read-accuracy-card"
         >
-          <div class="bill-payment-number-hero">
+          <div class="bill-read-accuracy-hero">
             <span
               aria-hidden="true"
-              class="bill-payment-number-icon"
+              class="bill-read-accuracy-icon"
             >
-              ✓
+              {{ accuracy.needsReview ? '?' : '✓' }}
             </span>
             <div>
-              <strong>납부번호를 읽었어요</strong>
-              <p>{{ presentedBill?.payee || '고지서' }}의 서버 인식 결과입니다.</p>
+              <strong>{{ accuracy.needsReview ? '확인할 항목이 있어요' : '인식 결과가 또렷해요' }}</strong>
+              <p>흐린 항목만 확인해 주시면 돼요.</p>
             </div>
           </div>
-          <dl class="bill-payment-number-value">
-            <dt>납부번호</dt>
-            <dd>{{ paymentNumber }}</dd>
+          <dl class="bill-read-accuracy-fields">
+            <div
+              v-for="field in accuracy.fields"
+              :key="field.key"
+              class="bill-read-accuracy-field"
+            >
+              <div class="bill-read-accuracy-field-head">
+                <dt>{{ field.label }}</dt>
+                <span
+                  :class="`bill-read-accuracy-field-status bill-read-accuracy-field-status-${field.statusKey}`"
+                >
+                  {{ field.statusLabel }}
+                </span>
+              </div>
+              <dd>{{ field.value }}</dd>
+            </div>
           </dl>
-          <p class="bill-payment-number-note">
-            <b>안내</b> 한 자리만 달라도 다른 곳으로 갈 수 있으니 꼭 확인해 주세요.
+          <p class="bill-read-accuracy-note">
+            <b>안내</b> 흐린 항목은 수정 화면에서 직접 확인할 수 있어요.
           </p>
         </section>
       </main>
 
-      <footer class="app-actions bill-payment-number-actions">
+      <footer class="app-actions bill-read-accuracy-actions">
         <Button
-          v-if="paymentNumber && !loading && !errorMessage"
+          v-if="accuracy && !loading && !errorMessage"
           class="w-full"
-          @click="openReview"
-        >
-          맞아요
-        </Button>
-        <Button
-          v-if="paymentNumber && !loading && !errorMessage"
-          class="w-full"
-          variant="secondary"
           @click="openEdit"
         >
-          고칠게요
+          흐린 곳 고치기
         </Button>
         <Button
-          v-if="paymentNumber && !loading && !errorMessage"
+          v-if="accuracy && !loading && !errorMessage"
           class="w-full"
           variant="secondary"
-          @click="openReadAccuracy"
+          @click="openReview"
         >
-          인식 정확도 보기
+          이대로 진행
         </Button>
         <Button
           class="w-full"
@@ -197,7 +191,7 @@ onBeforeUnmount(() => {
           variant="secondary"
           @click="errorMessage ? leave() : goBack()"
         >
-          {{ errorMessage ? '고지서 목록' : '고지서 상세' }}
+          {{ errorMessage ? '고지서 목록' : '납부번호 확인' }}
         </Button>
       </footer>
     </article>
