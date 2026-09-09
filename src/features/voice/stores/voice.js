@@ -10,12 +10,25 @@ import {
   abortSpeechCapture,
   captureSpeech,
 } from '../services/voiceStt.js'
+import { createTransferVoiceController } from '../services/voiceTransferController.js'
 
 /** Azure 토큰이 이 시간 안에 만료되면 재생 전에 새로 받는다. */
 const SPEECH_TOKEN_REFRESH_MARGIN_MS = 60_000
 
 /** 서버가 화면 조작을 허용하는 카드 종류다. */
 const SELECTABLE_CARD_TYPES = ['RECIPIENT_CANDIDATES', 'AMOUNT_RECONFIRM']
+
+export const TRANSFER_VOICE_PHASE = Object.freeze({
+  IDLE: 'IDLE',
+  TTS_PLAYING: 'TTS_PLAYING',
+  BARGE_IN_PENDING: 'BARGE_IN_PENDING',
+  WAITING_CANCELLED: 'WAITING_CANCELLED',
+  WAITING_START_ACK: 'WAITING_START_ACK',
+  STREAMING: 'STREAMING',
+  WAITING_STOP_ACK: 'WAITING_STOP_ACK',
+  WAITING_TURN_RESPONSE: 'WAITING_TURN_RESPONSE',
+  TEXT_FALLBACK: 'TEXT_FALLBACK',
+})
 
 const DEFAULT_VOICE_SETTINGS = {
   ttsVoice: 'ko-KR-JiMinNeural',
@@ -32,9 +45,11 @@ export const useVoiceStore = defineStore('voice', () => {
   const listening = ref(false)
   const speaking = ref(false)
   const transcript = ref('')
+  const partialTranscript = ref('')
   const settings = reactive({ ...DEFAULT_VOICE_SETTINGS })
   const error = ref(null)
   const busy = ref(false)
+  const transferPhase = ref(TRANSFER_VOICE_PHASE.IDLE)
 
   const sttMode = computed(() => session.value?.sttMode ?? STT_MODE.CLIENT)
   const usesBackendStream = computed(() => sttMode.value === STT_MODE.BACKEND_STREAM)
@@ -103,11 +118,225 @@ export const useVoiceStore = defineStore('voice', () => {
   }
   /** 발화 세대. 취소된 이전 발화가 최신 발화의 상태를 덮어쓰지 않게 한다. */
   let speakGeneration = 0
+  let transferController = null
+  let transferVoiceEnabled = false
+  let transferPending = null
 
+  function transferUserError(cause) {
+    const normalized = toUserError(cause)
+    error.value = normalized
+    listening.value = false
+    busy.value = false
+    transferPhase.value = TRANSFER_VOICE_PHASE.TEXT_FALLBACK
+
+    const pending = transferPending
+    if (pending) {
+      transferPending = null
+      pending.reject(normalized)
+    }
+    return normalized
+  }
+
+  function createTransferPending() {
+    if (transferPending) return transferPending
+
+    let resolvePending
+    let rejectPending
+    const responsePromise = new Promise((resolve, reject) => {
+      resolvePending = resolve
+      rejectPending = reject
+    })
+    transferPending = {
+      promise: responsePromise,
+      inputTurnId: '',
+      resolve: resolvePending,
+      reject: rejectPending,
+    }
+    return transferPending
+  }
+
+  function getTransferController() {
+    if (transferController) return transferController
+
+    transferController = createTransferVoiceController({
+      getSessionId: () => sessionId.value,
+      getCurrentTurnId: () => lastTurn.value?.aiTurnId ?? lastTurn.value?.turnId,
+      isSpeaking: () => speaking.value,
+      issueStreamTicket: (id) => voiceApi.issueStreamTicket(id),
+      onBeforeBargeIn: () => {
+        transferPhase.value = TRANSFER_VOICE_PHASE.BARGE_IN_PENDING
+        busy.value = true
+        silence()
+      },
+      onBargeInPending: () => {
+        transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_CANCELLED
+        busy.value = true
+      },
+      onBargeInReady: () => {},
+      onStartPending: ({ newInputTurnId }) => {
+        const pending = createTransferPending()
+        transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_START_ACK
+        pending.inputTurnId = newInputTurnId
+      },
+      onStartReady: ({ inputTurnId }) => {
+        if (transferPending?.inputTurnId === inputTurnId) {
+          transferPhase.value = TRANSFER_VOICE_PHASE.STREAMING
+        }
+      },
+      onInputStart: ({ newInputTurnId }) => {
+        partialTranscript.value = ''
+        transcript.value = ''
+        listening.value = true
+        busy.value = true
+        error.value = null
+        transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_START_ACK
+        const pending = createTransferPending()
+        pending.inputTurnId = newInputTurnId
+      },
+      onInputEnd: () => {
+        listening.value = false
+      },
+      onStopPending: ({ inputTurnId }) => {
+        if (transferPending?.inputTurnId === inputTurnId) {
+          transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_STOP_ACK
+        }
+      },
+      onStopAck: ({ inputTurnId }) => {
+        if (transferPending?.inputTurnId === inputTurnId) {
+          transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_TURN_RESPONSE
+        }
+      },
+      onPartial: ({ inputTurnId, text }) => {
+        if (transferPending?.inputTurnId !== inputTurnId) return
+        partialTranscript.value = text
+      },
+      onFinal: ({ inputTurnId, text }) => {
+        if (transferPending?.inputTurnId !== inputTurnId) return
+        transcript.value = text
+        partialTranscript.value = ''
+      },
+      onTurnResponse: ({ inputTurnId, data }) => {
+        const pending = transferPending
+        if (!pending || pending.inputTurnId !== inputTurnId) return
+
+        const turn = {
+          ...(data || {}),
+          inputTurnId,
+          turnId: data?.turnId ?? data?.aiTurnId ?? '',
+          aiTurnId: data?.aiTurnId ?? data?.turnId ?? '',
+        }
+        partialTranscript.value = ''
+        listening.value = false
+        busy.value = false
+        transferPending = null
+        transferPhase.value = turn.ttsText
+          ? TRANSFER_VOICE_PHASE.TTS_PLAYING
+          : TRANSFER_VOICE_PHASE.IDLE
+        applyTurn(turn)
+        pending.resolve(turn)
+      },
+      onCancelled: (event) => {
+        if (event?.target === 'AI_TTS') {
+          transferPhase.value = TRANSFER_VOICE_PHASE.WAITING_CANCELLED
+        }
+      },
+      onError: (cause) => {
+        transferUserError(cause)
+        void closeTransferResources()
+      },
+    })
+
+    return transferController
+  }
+
+  async function startTransferMonitor() {
+    if (!usesBackendStream.value || !transferVoiceEnabled || !sessionId.value) return null
+
+    try {
+      return await getTransferController().startMonitoring()
+    } catch (cause) {
+      transferUserError(cause)
+      await closeTransferResources(cause)
+      return null
+    }
+  }
+
+  async function closeTransferResources(cause = null) {
+    const controller = transferController
+    transferController = null
+    partialTranscript.value = ''
+
+    const pending = transferPending
+    transferPending = null
+    if (pending) {
+      const normalized = toUserError(
+        cause || {
+          isLocalError: true,
+          code: 'VOICE_STREAM_DISCONNECTED',
+          message: '음성 연결이 끊겼어요. 다시 말씀해 주세요.',
+        },
+      )
+      error.value = normalized
+      pending.reject(normalized)
+    }
+
+    await controller?.close?.().catch(() => {})
+  }
+
+  async function stopVoiceResources() {
+    transferVoiceEnabled = false
+    await closeTransferResources()
+    if (transferPhase.value !== TRANSFER_VOICE_PHASE.TEXT_FALLBACK) {
+      transferPhase.value = TRANSFER_VOICE_PHASE.IDLE
+    }
+  }
   function silence() {
     cancelSpeech()
     speakGeneration += 1
     speaking.value = false
+  }
+
+  /** 입력 시작 시 TTS를 끊고, 모드에 맞는 서버 취소 신호를 보낸다. */
+  async function interruptForInput() {
+    const interruptedSessionId = sessionId.value
+    const interruptedAiTurnId = lastTurn.value?.aiTurnId ?? lastTurn.value?.turnId
+    const shouldInvalidateClientTurn =
+      speaking.value &&
+      !usesBackendStream.value &&
+      Boolean(interruptedSessionId && interruptedAiTurnId)
+    const shouldBargeInTransfer =
+      speaking.value &&
+      usesBackendStream.value &&
+      transferVoiceEnabled &&
+      Boolean(interruptedSessionId && interruptedAiTurnId)
+
+    // TTS는 서버 ACK를 기다리지 않고 즉시 중단한다. 단, 새 START는
+    // BARGE_IN의 CANCELLED.readyForStart=true가 도착한 뒤에만 컨트롤러가 보낸다.
+    if (shouldBargeInTransfer) {
+      transferPhase.value = TRANSFER_VOICE_PHASE.BARGE_IN_PENDING
+      silence()
+      try {
+        await getTransferController().bargeIn(interruptedAiTurnId)
+      } catch (cause) {
+        transferPhase.value = TRANSFER_VOICE_PHASE.TEXT_FALLBACK
+        await closeTransferResources(cause)
+        throw cause
+      }
+      return null
+    }
+
+    silence()
+    if (!shouldInvalidateClientTurn) return null
+
+    try {
+      return await voiceApi.event(interruptedSessionId, {
+        eventType: 'INTERRUPTED',
+        turnId: interruptedAiTurnId,
+      })
+    } catch {
+      // 로컬 TTS 중단과 새 입력은 서버 이벤트 실패와 무관하게 계속한다.
+      return null
+    }
   }
 
   function isCredentialUsable(credential) {
@@ -137,17 +366,30 @@ export const useVoiceStore = defineStore('voice', () => {
     const content = String(text ?? '').trim()
     if (!content) return { spoken: false, reason: 'EMPTY_TEXT' }
 
-    const credential = await ensureSpeechCredential()
-    if (!credential && !isSpeechSupported()) return { spoken: false, reason: 'UNSUPPORTED' }
-
     speakGeneration += 1
     const generation = speakGeneration
     speaking.value = true
+    if (usesBackendStream.value && transferVoiceEnabled) {
+      transferPhase.value = TRANSFER_VOICE_PHASE.TTS_PLAYING
+      startTransferMonitor().catch(() => {})
+    }
     try {
+      const credential = await ensureSpeechCredential()
+      if (generation !== speakGeneration) return { spoken: false, reason: 'STOPPED' }
+      if (!credential && !isSpeechSupported()) return { spoken: false, reason: 'UNSUPPORTED' }
+
       return await speak(content, { ...settings, ttsSsml: ssml, speechCredential: credential })
     } finally {
       // 더 최신 발화가 시작됐다면 상태는 그쪽이 관리한다.
-      if (generation === speakGeneration) speaking.value = false
+      if (generation === speakGeneration) {
+        speaking.value = false
+        if (usesBackendStream.value && transferVoiceEnabled) {
+          await closeTransferResources()
+          if (transferPhase.value === TRANSFER_VOICE_PHASE.TTS_PLAYING) {
+            transferPhase.value = TRANSFER_VOICE_PHASE.IDLE
+          }
+        }
+      }
     }
   }
 
@@ -165,8 +407,10 @@ export const useVoiceStore = defineStore('voice', () => {
     const response = await run(() => voiceApi.createSession({ entryPoint }))
     session.value = response
     sessionId.value = response?.sessionId ?? ''
+    transferVoiceEnabled = response?.sttMode === STT_MODE.BACKEND_STREAM
     lastTurn.value = null
     transcript.value = ''
+    partialTranscript.value = ''
     if (response?.firstPrompt) speakText(response.firstPrompt).catch(() => {})
     return response
   }
@@ -175,6 +419,7 @@ export const useVoiceStore = defineStore('voice', () => {
     const response = await run(() => voiceApi.getSession(id))
     session.value = response
     sessionId.value = response?.sessionId ?? id
+    transferVoiceEnabled = response?.sttMode === STT_MODE.BACKEND_STREAM
     return response
   }
 
@@ -183,9 +428,49 @@ export const useVoiceStore = defineStore('voice', () => {
     return applyTurn(response)
   }
 
+  /** 송금은 오디오 프레임을 WebSocket으로 보내고 소켓 턴 응답을 기다린다. */
+  async function listenAndSendTransferTurn() {
+    try {
+      await interruptForInput()
+    } catch (cause) {
+      const normalized = transferUserError(cause)
+      await closeTransferResources(cause)
+      throw normalized
+    }
+    busy.value = true
+    listening.value = false
+    error.value = null
+    partialTranscript.value = ''
+    transferVoiceEnabled = true
+
+    const responsePromise = createTransferPending().promise
+
+    try {
+      const turnId = await getTransferController().startInput()
+      if (!turnId) {
+        throw {
+          isLocalError: true,
+          code: 'VOICE_STREAM_UNAVAILABLE',
+          message: '음성 연결이 되지 않았어요. 화면 단추로 진행해 주세요.',
+        }
+      }
+      return await responsePromise
+    } catch (cause) {
+      const normalized = transferUserError(cause)
+      await closeTransferResources(cause)
+      error.value = normalized
+      throw normalized
+    } finally {
+      if (transferPending?.promise === responsePromise) transferPending = null
+      listening.value = false
+      busy.value = false
+    }
+  }
+
   /** 한 번 듣고 그 발화를 서버에 보낸다. 듣기 직전 재생 중인 안내를 끊는다. */
   async function listenAndSendTurn() {
-    silence()
+    if (usesBackendStream.value) return listenAndSendTransferTurn()
+    await interruptForInput()
     busy.value = true
     listening.value = true
     error.value = null
@@ -222,7 +507,23 @@ export const useVoiceStore = defineStore('voice', () => {
       throw error.value
     }
 
-    silence()
+    try {
+      await interruptForInput()
+    } catch (cause) {
+      const normalized = transferUserError(cause)
+      await closeTransferResources(cause)
+      throw normalized
+    }
+    if (usesBackendStream.value) {
+      transferPhase.value = TRANSFER_VOICE_PHASE.TEXT_FALLBACK
+      try {
+        await transferController?.cancelForFallback?.()
+      } catch {
+        // 오디오 정리가 실패해도 capture/socket을 닫고 text fallback을 제공한다.
+      }
+      await stopVoiceResources()
+      transferPhase.value = TRANSFER_VOICE_PHASE.TEXT_FALLBACK
+    }
     transcript.value = content
     return sendTurn({
       turnId: createTurnId(),
@@ -253,7 +554,7 @@ export const useVoiceStore = defineStore('voice', () => {
       throw error.value
     }
 
-    silence()
+    await interruptForInput()
 
     const request = {
       actionId: createTurnId(),
@@ -317,6 +618,7 @@ export const useVoiceStore = defineStore('voice', () => {
 
   async function closeSession() {
     silence()
+    await stopVoiceResources()
     await abortSpeechCapture()
     const response = await run(() => voiceApi.closeSession(sessionId.value))
     session.value = response
@@ -356,6 +658,7 @@ export const useVoiceStore = defineStore('voice', () => {
 
   function reset() {
     silence()
+    void stopVoiceResources()
     sessionId.value = ''
     session.value = null
     lastTurn.value = null
@@ -363,9 +666,11 @@ export const useVoiceStore = defineStore('voice', () => {
     speechToken.value = null
     listening.value = false
     transcript.value = ''
+    partialTranscript.value = ''
     Object.assign(settings, DEFAULT_VOICE_SETTINGS)
     error.value = null
     busy.value = false
+    transferPhase.value = TRANSFER_VOICE_PHASE.IDLE
   }
 
   return {
@@ -377,6 +682,8 @@ export const useVoiceStore = defineStore('voice', () => {
     listening,
     speaking,
     transcript,
+    partialTranscript,
+    transferPhase,
     settings,
     error,
     busy,
@@ -410,6 +717,7 @@ export const useVoiceStore = defineStore('voice', () => {
     speakLatest,
     speakText,
     silence,
+    stopVoiceResources,
     closeSession,
     issueSpeechToken,
     loadSettings,

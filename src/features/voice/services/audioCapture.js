@@ -81,7 +81,7 @@ function createChunker(emitFrame) {
   let pending = new Float32Array(0)
   let sequence = 0
 
-  return (samples) => {
+  const push = (samples) => {
     if (!samples.length) return
 
     const merged = new Float32Array(pending.length + samples.length)
@@ -101,15 +101,22 @@ function createChunker(emitFrame) {
 
     pending = pending.slice(offset)
   }
+
+  push.resetSequence = () => {
+    sequence = 0
+    pending = new Float32Array(0)
+  }
+
+  return push
 }
 
 /**
  * 마이크를 열고 프레임을 흘려보낸다.
  *
- * @param {{ onFrame: (frame: ArrayBuffer) => void }} options
+ * @param {{ onFrame: (frame: ArrayBuffer) => void, onSamples?: (samples: Float32Array) => void }} options
  * @returns {Promise<{ stop: () => Promise<void>, sampleRate: number }>}
  */
-export async function startAudioCapture({ onFrame }) {
+export async function startAudioCapture({ onFrame, onSamples }) {
   if (typeof onFrame !== 'function') {
     throw createSttError('AUDIO_CAPTURE_FAILED', '오디오를 보낼 곳이 지정되지 않았어요.')
   }
@@ -153,7 +160,11 @@ export async function startAudioCapture({ onFrame }) {
     const resample = createResampler(audioContext.sampleRate, TARGET_SAMPLE_RATE)
     const push = createChunker(onFrame)
 
-    worklet.port.onmessage = (event) => push(resample(event.data))
+    worklet.port.onmessage = (event) => {
+      const samples = resample(event.data)
+      onSamples?.(samples)
+      push(samples)
+    }
     source.connect(worklet)
     // 스피커로 다시 내보내지 않는다. 연결만 유지하기 위한 목적지다.
     worklet.connect(audioContext.destination)
@@ -162,6 +173,9 @@ export async function startAudioCapture({ onFrame }) {
 
     return {
       sampleRate: audioContext.sampleRate,
+      resetSequence() {
+        push.resetSequence()
+      },
       async stop() {
         worklet.port.onmessage = null
         source.disconnect()

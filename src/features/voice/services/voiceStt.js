@@ -180,11 +180,11 @@ export async function captureSpeech(sttMode = STT_MODE.CLIENT) {
  * @param {{ onFrame: (frame: ArrayBuffer) => void }} options
  * @returns {Promise<{ stop: () => Promise<void>, sampleRate: number }>}
  */
-export async function startTransferAudioCapture({ onFrame }) {
+export async function startTransferAudioCapture({ onFrame, onSamples }) {
   if (!isAudioCaptureSupported()) {
     throw createSttError('AUDIO_CAPTURE_UNSUPPORTED', '이 기기에서는 마이크를 사용할 수 없어요.')
   }
-  return startAudioCapture({ onFrame })
+  return startAudioCapture({ onFrame, onSamples })
 }
 
 export async function abortSpeechCapture() {
