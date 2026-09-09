@@ -199,7 +199,7 @@ function leave() {
   cleanupBillCamera()
   pendingBillImage = null
   clearPendingBillImage()
-  return router.push({ name: 'bills-home' })
+  return router.push({ name: 'bill-cancelled' })
 }
 
 onBeforeUnmount(cleanupBillCamera)
