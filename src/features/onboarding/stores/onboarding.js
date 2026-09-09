@@ -56,14 +56,22 @@ export const useOnboardingStore = defineStore('onboarding', {
 
     validateAll() {
       for (const stepId of REQUIRED_DATA_STEPS) {
-        if (!this.validate(stepId)) return { valid: false, stepId }
+        if (!this.validate(stepId)) {
+          return { valid: false, stepId, fieldErrors: { ...this.fieldErrors } }
+        }
       }
-      return { valid: true, stepId: null }
+      return { valid: true, stepId: null, fieldErrors: {} }
     },
 
     async submit() {
       const validation = this.validateAll()
-      if (!validation.valid) return { ok: false, stepId: validation.stepId }
+      if (!validation.valid) {
+        return {
+          ok: false,
+          stepId: validation.stepId,
+          fieldErrors: validation.fieldErrors,
+        }
+      }
 
       this.status = 'loading'
       this.submitError = null

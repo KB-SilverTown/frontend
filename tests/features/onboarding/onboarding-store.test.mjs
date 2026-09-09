@@ -81,6 +81,36 @@ test('store exposes step errors and clears them after valid input', () => {
   assert.deepEqual(store.fieldErrors, {})
 })
 
+test('submit reports the invalid step and fields without calling signup', async () => {
+  setActivePinia(createPinia())
+  const store = useOnboardingStore()
+  store.draft.emergencyContact = {
+    name: '민주',
+    relationship: '배우자',
+    phone: '01074876754',
+  }
+  assert.equal(store.validate('emergency-contact'), true)
+
+  const originalSignup = onboardingApi.signup
+  let signupCalls = 0
+  onboardingApi.signup = async () => {
+    signupCalls += 1
+    return null
+  }
+
+  try {
+    const result = await store.submit()
+
+    assert.equal(result.ok, false)
+    assert.equal(result.stepId, 'consents')
+    assert.deepEqual(result.fieldErrors, {
+      consents: '필수 동의 항목을 확인해 주세요.',
+    })
+    assert.equal(signupCalls, 0)
+  } finally {
+    onboardingApi.signup = originalSignup
+  }
+})
 test('store logs in with the ID and password fields', async () => {
   setActivePinia(createPinia())
   const store = useOnboardingStore()
