@@ -112,6 +112,9 @@ test('production action routes follow the service flow instead of raw screen ord
   assert.deepEqual(getProductionActionRoutes('living', 'living-reminder-speak').primary, {
     name: 'my-page',
   })
+  assert.deepEqual(getProductionActionRoutes('living', 'living-profile-edit').secondary, {
+    name: 'my-page',
+  })
   assert.deepEqual(getProductionActionRoutes('voice', 'voice-voice-select').primary, {
     name: 'my-page-voice',
     params: { screenKey: 'voice-voice-preview' },
@@ -500,7 +503,10 @@ test('mobile branch screen loads nearby data, renders card fields, and guards di
   assert.match(mobileBranchPresentationSource, /visitTime/)
   assert.match(routeViewSource, /mobileBranchLocationLoading/)
   assert.match(routeViewSource, /mobileBranchPrimaryDisabled/)
-  assert.match(routeViewSource, /:disabled="isBusy \|\| mobileBranchPrimaryDisabled"/)
+  assert.match(
+    routeViewSource,
+    /:disabled="isBusy \|\| mobileBranchPrimaryDisabled(?: \|\| isProfileEditScreen)?"/,
+  )
   const loadScreenSource = routeViewSource.slice(
     routeViewSource.indexOf('async function loadScreen()'),
     routeViewSource.indexOf('async function go('),

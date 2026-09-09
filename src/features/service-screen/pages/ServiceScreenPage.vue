@@ -62,6 +62,10 @@ const {
   isMobileBranchListScreen,
   isMobileBranchDetailScreen,
   isMobileBranchScreen,
+  isProfileEditScreen,
+  profileRows,
+  profileLoading,
+  profileError,
   mobileBranchLocationError,
   mobileBranchLocationLoading,
   hideScreenActions,
@@ -301,6 +305,7 @@ const {
             !isVoiceSettingsSelectScreen &&
             !isVoiceSettingsPreviewScreen &&
             !isMobileBranchScreen &&
+            !isProfileEditScreen &&
             !isReminderScreen &&
             !showVoiceControl &&
             !showTransferFlow
@@ -329,6 +334,41 @@ const {
           >
             오류 또는 주의가 필요한 화면입니다.
           </p>
+        </section>
+
+        <section
+          v-if="screen && isProfileEditScreen"
+          aria-label="내 정보"
+          class="service-route-screen-content screen-content"
+          :data-variant="screen.variant"
+        >
+          <p
+            v-if="profileLoading"
+            class="service-route-live-empty"
+            role="status"
+          >
+            내 정보를 불러오고 있어요.
+          </p>
+          <p
+            v-else-if="profileError"
+            class="service-route-live-error"
+            role="alert"
+          >
+            {{ profileError }}
+          </p>
+          <div
+            v-else
+            class="content"
+          >
+            <div
+              v-for="row in profileRows"
+              :key="row.label"
+              class="field"
+            >
+              <span>{{ row.label }}</span>
+              <b>{{ row.value }}</b>
+            </div>
+          </div>
         </section>
 
         <section
@@ -1202,7 +1242,7 @@ const {
           <Button
             v-if="screen.primaryLabel"
             class="service-route-primary"
-            :disabled="isBusy || mobileBranchPrimaryDisabled"
+            :disabled="isBusy || mobileBranchPrimaryDisabled || isProfileEditScreen"
             @click="handlePrimary"
           >
             {{ isBusy ? '처리하고 있어요…' : screen.primaryLabel }}

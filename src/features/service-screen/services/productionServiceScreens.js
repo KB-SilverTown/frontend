@@ -186,7 +186,7 @@ const actionRoutesByScreenKey = {
       },
       secondary: { name: 'my-page' },
     },
-    'living-profile-edit': { primary: homeRoute('living'), secondary: homeRoute('living') },
+    'living-profile-edit': { primary: homeRoute('living'), secondary: { name: 'my-page' } },
     'living-emergency-contact-edit': {
       primary: homeRoute('living'),
       secondary: homeRoute('living'),
