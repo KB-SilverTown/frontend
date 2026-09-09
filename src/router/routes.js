@@ -63,6 +63,11 @@ export const routes = [
     component: () => import('@/views/BillOcrView.vue'),
   },
   {
+    path: '/bills/cancelled',
+    name: 'bill-cancelled',
+    component: () => import('@/views/BillCancelledView.vue'),
+  },
+  {
     path: '/bills/:billId/payment-number',
     name: 'bill-payment-number',
     component: () => import('@/views/BillPaymentNumberView.vue'),

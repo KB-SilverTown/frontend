@@ -94,7 +94,7 @@ function backToCamera() {
 
 function leave() {
   clearPendingBillImage()
-  return router.push({ name: 'bills-home' })
+  return router.push({ name: 'bill-cancelled' })
 }
 
 onMounted(processBill)
