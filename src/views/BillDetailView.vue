@@ -16,6 +16,13 @@ const errorMessage = ref('')
 let requestId = 0
 
 const presentedBill = computed(() => (bill.value ? presentBill(bill.value) : null))
+const isOverdue = computed(() => isOverdueStatus(bill.value))
+const pageTitle = computed(() => (isOverdue.value ? '지난 고지서' : '고지서 확인'))
+const pageDescription = computed(() =>
+  isOverdue.value
+    ? '저장해 둔 고지서와 납부 상태를 봅니다.'
+    : '납부하기 전에 고지서 내용을 확인해 주세요.',
+)
 const detailRows = computed(() => {
   if (!presentedBill.value) return []
 
@@ -26,6 +33,11 @@ const detailRows = computed(() => {
     { label: '납부상태', value: presentedBill.value.status },
   ]
 })
+
+function isOverdueStatus(value) {
+  const status = String(value?.status ?? value?.paymentStatus ?? '').trim().toUpperCase()
+  return ['OVERDUE', 'LATE'].includes(status)
+}
 
 async function loadBill() {
   const currentRequestId = ++requestId
@@ -45,7 +57,11 @@ async function loadBill() {
       const response = await billsApi.get(billId)
       if (currentRequestId !== requestId) return
 
-      bill.value = response?.bill && typeof response.bill === 'object' ? response.bill : response
+      const loadedBill = response?.bill && typeof response.bill === 'object' ? response.bill : response
+      bill.value = loadedBill
+      if (isOverdueStatus(loadedBill) && route.name === 'bill-detail') {
+        await router.replace({ name: 'bill-overdue', params: { billId } })
+      }
     })
   } catch {
     if (currentRequestId === requestId) {
@@ -62,7 +78,7 @@ function goBack() {
 
 function openReview() {
   const billId = String(route.params.billId ?? '').trim()
-  if (!billId) return
+  if (!billId || isOverdue.value) return
   return router.push({ name: 'bill-review', params: { billId } })
 }
 
@@ -98,8 +114,8 @@ onBeforeUnmount(() => {
 
       <main class="app-main bill-detail-main">
         <section class="screen-heading bill-detail-heading">
-          <h1>고지서 확인</h1>
-          <p>납부하기 전에 고지서 내용을 확인해 주세요.</p>
+          <h1>{{ pageTitle }}</h1>
+          <p>{{ pageDescription }}</p>
         </section>
 
         <p
@@ -125,7 +141,7 @@ onBeforeUnmount(() => {
         </section>
         <section
           v-else-if="presentedBill"
-          aria-label="고지서 상세 정보"
+          :aria-label="isOverdue ? '지난 고지서 상세 정보' : '고지서 상세 정보'"
           class="bill-detail-card"
         >
           <div class="bill-detail-hero">
@@ -133,11 +149,17 @@ onBeforeUnmount(() => {
               aria-hidden="true"
               class="bill-detail-icon"
             >
-              ✓
+              {{ isOverdue ? '?' : '✓' }}
             </span>
             <div>
-              <strong>{{ presentedBill.payee }}</strong>
-              <p>서버에 저장된 고지서 정보입니다.</p>
+              <strong>{{ isOverdue ? '지난 고지서' : presentedBill.payee }}</strong>
+              <p>
+                {{
+                  isOverdue
+                    ? '서버에 저장된 납부 결과를 확인합니다.'
+                    : '서버에 저장된 고지서 정보입니다.'
+                }}
+              </p>
             </div>
           </div>
           <div class="bill-detail-rows">
@@ -151,14 +173,19 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <p class="bill-detail-note">
-            <b>안내</b> 납부를 진행하기 전 금액과 납부기한을 한 번 더 확인해 주세요.
+            <b>안내</b>
+            {{
+              isOverdue
+                ? '지난 고지서는 납부 상태와 저장된 정보만 확인할 수 있어요.'
+                : '납부를 진행하기 전 금액과 납부기한을 한 번 더 확인해 주세요.'
+            }}
           </p>
         </section>
       </main>
 
       <footer class="app-actions bill-detail-actions">
         <Button
-          v-if="presentedBill && !loading && !errorMessage"
+          v-if="presentedBill && !loading && !errorMessage && !isOverdue"
           class="w-full"
           @click="openReview"
         >
