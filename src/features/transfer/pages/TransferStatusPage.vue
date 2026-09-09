@@ -1,19 +1,18 @@
 <script setup>
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-
-import VoiceConversationPanel from '@/features/voice/components/VoiceConversationPanel.vue'
-import { TRANSFER_VOICE_PHASE, useVoiceStore } from '@/features/voice/stores/voice.js'
+import { useRouter } from 'vue-router'
 import TransferPageShell from '@/features/transfer/components/TransferPageShell.vue'
 import { goBackOrReplace } from '@/shared/lib/navigation.js'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
 const router = useRouter()
-const route = useRoute()
-const voiceStore = useVoiceStore()
-const isVoiceTransfer = computed(() => props.screenKey === 'transfer-listening')
 const states = {
-  'transfer-listening': ['듣는 중', '송금할 내용을 말씀해 주세요.', '', ''],
+  'transfer-listening': [
+    '듣는 중',
+    '송금할 내용을 말씀해 주세요.',
+    '키보드로 입력',
+    'transfer-recipient-select',
+  ],
   'transfer-processing': ['처리 중', '요청을 안전하게 확인하고 있어요.', '취소', 'transfer-home'],
   'transfer-speaking': [
     '읽어드리는 중',
@@ -64,28 +63,10 @@ const states = {
     'transfer-home',
   ],
 }
-const VOICE_CARD_STATES = {
-  RECIPIENT_CANDIDATES: ['받는 분 선택', '읽어드린 후보 중 받는 분을 골라주세요.'],
-  AMOUNT_RECONFIRM: ['금액 재확인', '보낼 금액을 한 번 더 확인해 주세요.'],
-  TRANSFER_READBACK: ['최종 확인', '받는 분과 금액을 읽어드리고 있어요.'],
-  TRANSFER_RISK_CHECK: ['위험 확인', '안전을 위해 송금 목적을 확인할게요.'],
-  TRANSFER_HELD: ['송금 보류', '안전을 위해 송금을 잠시 보류했어요.'],
-}
-const voiceState = computed(() => {
-  const cardState = VOICE_CARD_STATES[voiceStore.displayCard?.type]
-  if (cardState) return [...cardState, '', '']
-  if (voiceStore.transferPhase === TRANSFER_VOICE_PHASE.WAITING_TURN_RESPONSE)
-    return ['처리 중', '말씀하신 내용을 안전하게 확인하고 있어요.', '', '']
-  if (voiceStore.transferPhase === TRANSFER_VOICE_PHASE.TTS_PLAYING)
-    return ['읽어드리는 중', '제가 이해한 내용을 읽어드리고 있어요.', '', '']
-  return states['transfer-listening']
-})
-const state = computed(() => {
-  if (isVoiceTransfer.value) return voiceState.value
-  return (
-    states[props.screenKey] || ['송금 안내', '송금 내용을 확인합니다.', '홈으로', 'transfer-home']
-  )
-})
+const state = computed(
+  () =>
+    states[props.screenKey] || ['송금 안내', '송금 내용을 확인합니다.', '홈으로', 'transfer-home'],
+)
 function primary() {
   const target = state.value[3]
   return router.push(
@@ -95,7 +76,6 @@ function primary() {
   )
 }
 </script>
-
 <template>
   <TransferPageShell
     :title="state[0]"
@@ -103,17 +83,7 @@ function primary() {
     :primary-label="state[2]"
     @back="goBackOrReplace(router, { name: 'transfer-home' })"
     @primary="primary"
-  >
-    <VoiceConversationPanel
-      v-if="isVoiceTransfer"
-      :auto-start="route.query.voice === '1'"
-      entry-point="TRANSFER"
-      :screen-key="screenKey"
-    />
-    <section
-      v-else
-      class="service-route-screen-content screen-content"
-    >
+    ><section class="service-route-screen-content screen-content">
       <div class="content">
         <section class="hero">
           <div class="hero-icon">!</div>
@@ -123,6 +93,6 @@ function primary() {
           </div>
         </section>
       </div>
-    </section>
-  </TransferPageShell>
+    </section></TransferPageShell
+  >
 </template>
