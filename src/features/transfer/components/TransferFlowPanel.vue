@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import { Button } from '@/shared/components/ui/button'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
@@ -45,6 +45,29 @@ const amountText = computed({
 })
 
 const amountCandidates = computed(() => transferStore.validation?.amountCandidates ?? [])
+const recipientKeyword = ref('')
+const recipientSearchError = ref('')
+
+async function searchRecipients() {
+  const keyword = recipientKeyword.value.trim()
+  recipientSearchError.value = ''
+
+  if (!keyword) {
+    recipientSearchError.value = '받는 분 이름을 입력해 주세요.'
+    return
+  }
+
+  try {
+    await transferStore.findRecipients({ keyword })
+  } catch (error) {
+    recipientSearchError.value = error?.message || '받는 분을 찾지 못했어요. 다시 시도해 주세요.'
+  }
+}
+
+function clearRecipientCandidates() {
+  recipientSearchError.value = ''
+  transferStore.clearRecipientSelection()
+}
 
 function formatAmount(value) {
   const amount = Number(value)
@@ -80,6 +103,42 @@ onMounted(() => {
       role="radiogroup"
     >
       <strong class="text-[15px]">받는 분을 골라주세요</strong>
+      <form
+        class="flex flex-col gap-3"
+        @submit.prevent="searchRecipients"
+      >
+        <label
+          class="text-[15px] font-semibold"
+          for="transfer-recipient-keyword"
+        >
+          받는 분 이름
+        </label>
+        <input
+          id="transfer-recipient-keyword"
+          v-model="recipientKeyword"
+          autocomplete="name"
+          class="min-h-16 rounded-2xl border px-5 text-xl"
+          maxlength="50"
+          placeholder="예: 김영희"
+          type="text"
+          @input="clearRecipientCandidates"
+        />
+        <Button
+          :disabled="transferStore.busy"
+          type="submit"
+          variant="secondary"
+        >
+          {{ transferStore.busy ? '찾는 중이에요…' : '받는 분 찾기' }}
+        </Button>
+      </form>
+
+      <p
+        v-if="recipientSearchError"
+        class="text-[15px] leading-relaxed text-destructive"
+        role="alert"
+      >
+        {{ recipientSearchError }}
+      </p>
 
       <p
         v-if="!candidates.length"

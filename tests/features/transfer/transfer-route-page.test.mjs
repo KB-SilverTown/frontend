@@ -17,6 +17,10 @@ const schedulePage = readFileSync(
   new URL('../../../src/features/transfer/pages/TransferSchedulePage.vue', import.meta.url),
   'utf8',
 )
+const flowPanel = readFileSync(
+  new URL('../../../src/features/transfer/components/TransferFlowPanel.vue', import.meta.url),
+  'utf8',
+)
 
 test('transfer routes canonicalize every design id and reject unknown screens', () => {
   for (let number = 2; number <= 31; number += 1) {
@@ -37,6 +41,30 @@ test('transfer route page delegates flow, schedule, and status without the legac
   assert.doesNotMatch(routePage, /service-screen|v-html|contentHtml/)
 })
 
+test('transfer voice entry keeps the backend voice conversation in the transfer screen', () => {
+  const statusPage = readFileSync(
+    new URL('../../../src/features/transfer/pages/TransferStatusPage.vue', import.meta.url),
+    'utf8',
+  )
+  const homePage = readFileSync(
+    new URL('../../../src/features/transfer/pages/TransferHomePage.vue', import.meta.url),
+    'utf8',
+  )
+  const voicePanel = readFileSync(
+    new URL('../../../src/features/voice/components/VoiceConversationPanel.vue', import.meta.url),
+    'utf8',
+  )
+
+  assert.match(statusPage, /VoiceConversationPanel/)
+  assert.match(statusPage, /entry-point="TRANSFER"/)
+  assert.match(statusPage, /RECIPIENT_CANDIDATES/)
+  assert.match(statusPage, /TRANSFER_READBACK/)
+  assert.match(statusPage, /TRANSFER_RISK_CHECK/)
+  assert.match(homePage, /query: \{ voice: '1' \}/)
+  assert.doesNotMatch(homePage, /gwipyeonhan:voice-transfer/)
+  assert.match(voicePanel, /autoStart: Boolean/)
+  assert.match(voicePanel, /if \(props\.autoStart\) void listen\(\)/)
+})
 test('transfer flow keeps explicit confirmation, risk, authentication, and execution gates', () => {
   assert.match(flowPage, /transfer\.selectedRecipient/)
   assert.match(flowPage, /transfer\.validateAmount/)
@@ -48,6 +76,13 @@ test('transfer flow keeps explicit confirmation, risk, authentication, and execu
   assert.match(flowPage, /transfer\.startGuardianVerification/)
 })
 
+test('transfer recipient selection searches before a candidate can be selected', () => {
+  assert.match(flowPanel, /v-model="recipientKeyword"/)
+  assert.match(flowPanel, /transferStore\.findRecipients\(\{ keyword \}\)/)
+  assert.match(flowPanel, /@submit\.prevent="searchRecipients"/)
+  assert.match(flowPanel, /@input="clearRecipientCandidates"/)
+  assert.match(flowPanel, /role="alert"/)
+})
 test('transfer schedule keeps local plan CRUD separate from financial execution', () => {
   assert.match(schedulePage, /plans\.addPlan/)
   assert.match(schedulePage, /plans\.updatePlan/)

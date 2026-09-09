@@ -55,10 +55,10 @@ onMounted(() => {
 })
 
 function startVoiceTransfer() {
-  window.dispatchEvent(new CustomEvent('gwipyeonhan:voice-transfer'))
   router.push({
     name: 'transfer-screen',
     params: { screenKey: 'transfer-listening' },
+    query: { voice: '1' },
   })
 }
 </script>
@@ -123,15 +123,13 @@ function startVoiceTransfer() {
             class="transfer-choice-grid"
             role="group"
           >
-            <RouterLink
-              :to="{
-                name: 'transfer-screen',
-                params: { screenKey: 'transfer-listening' },
-              }"
+            <button
               class="transfer-choice"
+              type="button"
+              @click="startVoiceTransfer"
             >
               <span>송금하기</span>
-            </RouterLink>
+            </button>
             <RouterLink
               :to="{ name: 'bills-home' }"
               class="transfer-choice"
