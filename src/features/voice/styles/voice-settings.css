@@ -1,0 +1,177 @@
+.voice-settings-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.voice-settings-group {
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.voice-settings-group legend {
+  margin-bottom: 2px;
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.voice-settings-options {
+  display: grid;
+  gap: 10px;
+}
+
+.voice-settings-option {
+  display: flex;
+  width: 100%;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--foreground);
+  text-align: left;
+}
+
+.voice-settings-option > span {
+  display: grid;
+  gap: 4px;
+}
+
+.voice-settings-option strong {
+  font-size: var(--font-size-body);
+  font-weight: 850;
+}
+
+.voice-settings-option small {
+  color: var(--muted-foreground);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.voice-settings-option b {
+  min-width: 24px;
+  color: var(--primary-foreground);
+  font-size: 24px;
+  text-align: center;
+}
+
+.voice-settings-option.is-selected {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.voice-settings-option-compact {
+  min-height: 64px;
+  justify-content: center;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.voice-settings-options-five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.voice-settings-options-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.voice-settings-hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.voice-settings-preview-card {
+  display: grid;
+  min-height: 170px;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px 18px;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: var(--muted);
+  text-align: center;
+}
+
+.voice-settings-preview-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.voice-settings-preview-card strong {
+  font-size: 24px;
+  font-weight: 850;
+}
+
+.voice-settings-preview-card p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+.voice-settings-summary {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+}
+
+.voice-settings-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.voice-settings-summary div:first-child {
+  border-top: 0;
+}
+
+.voice-settings-summary dt {
+  color: var(--muted-foreground);
+  font-size: var(--font-size-body);
+}
+
+.voice-settings-summary dd {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--font-size-body);
+  font-weight: 800;
+}
+
+.voice-settings-replay {
+  min-height: 56px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+@media (max-width: 500px) {
+  .voice-settings-options-five {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .voice-settings-options-five .voice-settings-option:last-child {
+    grid-column: 1 / -1;
+  }
+}

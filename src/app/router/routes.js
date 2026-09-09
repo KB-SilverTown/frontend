@@ -15,11 +15,17 @@ function createProductionServiceRoute(service) {
       const screen = resolveProductionScreen(service, screenKey)
 
       if (service === 'living' && screen?.screenKey === 'living-voice-settings') {
-        return { name: 'my-page' }
+        return {
+          name: 'my-page-voice',
+          params: { screenKey: 'voice-voice-select' },
+        }
       }
 
       if (service === 'voice' && isVoiceSettingsScreen(screenKey)) {
-        return { name: 'my-page' }
+        return {
+          name: 'my-page-voice',
+          params: { screenKey },
+        }
       }
 
       if (!screen) {

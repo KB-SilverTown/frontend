@@ -2,7 +2,7 @@ export default [
   {
     key: 'voice-voice-select',
     title: '목소리 고르기',
-    description: '목소리와 말하기 속도를 직접 정합니다.',
+    description: '목소리, 말하기 속도와 높낮이를 직접 정합니다.',
     contentHtml:
       '<div class="choices"><div class="choice active"><span>낮은 남성 목소리</span><i>✓</i></div><div class="choice "><span>여성 목소리</span><i></i></div></div><div class="field"><span>말하기 속도</span><b>조금 느리게</b></div><div class="field"><span>목소리 높낮이</span><b>보통</b></div><div class="note"><b>안내</b><span>낮고 또렷한 목소리가 듣기 편해요.</span></div>',
     primaryLabel: '미리 들어보기',

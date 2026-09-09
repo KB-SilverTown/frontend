@@ -106,7 +106,8 @@ test('production action routes follow the service flow instead of raw screen ord
     params: { stepId: 'login' },
   })
   assert.deepEqual(getProductionActionRoutes('living', 'living-voice-settings').primary, {
-    name: 'my-page',
+    name: 'my-page-voice',
+    params: { screenKey: 'voice-voice-select' },
   })
   assert.deepEqual(getProductionActionRoutes('living', 'living-reminder-speak').primary, {
     name: 'my-page',
@@ -134,21 +135,30 @@ test('voice selection screens reject legacy routes and allow only the my page fl
       { params: { screenKey: 'voice-voice-select' } },
       { name: 'living-screen', params: { screenKey: 'living-voice-settings' } },
     ),
-    { name: 'my-page' },
+    {
+      name: 'my-page-voice',
+      params: { screenKey: 'voice-voice-select' },
+    },
   )
   assert.deepEqual(
     livingRoute?.beforeEnter?.(
       { params: { screenKey: 'living-voice-settings' } },
       { name: 'living-home' },
     ),
-    { name: 'my-page' },
+    {
+      name: 'my-page-voice',
+      params: { screenKey: 'voice-voice-select' },
+    },
   )
   assert.deepEqual(
     voiceRoute?.beforeEnter?.(
       { params: { screenKey: 'voice-voice-preview' } },
       { name: 'voice-screen', params: { screenKey: 'voice-voice-select' } },
     ),
-    { name: 'my-page' },
+    {
+      name: 'my-page-voice',
+      params: { screenKey: 'voice-voice-preview' },
+    },
   )
   assert.equal(
     myPageVoiceRoute?.beforeEnter?.(
@@ -165,7 +175,6 @@ test('voice selection screens reject legacy routes and allow only the my page fl
     true,
   )
 })
-
 test('home actions point to production detail routes', () => {
   assert.match(transferHomeSource, /transfer-screen/)
   assert.match(transferHomeSource, /screenKey: 'transfer-listening'/)

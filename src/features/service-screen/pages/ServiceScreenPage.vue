@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import TransferFlowPanel from '@/features/transfer/components/TransferFlowPanel.vue'
 import VoiceConversationPanel from '@/features/voice/components/VoiceConversationPanel.vue'
+import VoiceSettingsPanel from '@/features/voice/components/VoiceSettingsPanel.vue'
 import {
   mobileBranchAddress,
   mobileBranchDistance,
@@ -46,6 +47,8 @@ const {
   backRoute,
   primaryRoute,
   showVoiceControl,
+  isVoiceSettingsSelectScreen,
+  isVoiceSettingsPreviewScreen,
   isBillSourceSelection,
   isBillCameraScreen,
   isReminderListScreen,
@@ -261,12 +264,42 @@ const {
         </section>
 
         <section
+          v-if="screen && isVoiceSettingsSelectScreen"
+          aria-label="목소리와 말하기 설정"
+          class="service-route-screen-content screen-content voice-settings-content"
+          :data-variant="screen.variant"
+        >
+          <div class="content">
+            <VoiceSettingsPanel
+              mode="select"
+              :disabled="isBusy"
+            />
+          </div>
+        </section>
+
+        <section
+          v-if="screen && isVoiceSettingsPreviewScreen"
+          aria-label="목소리 미리듣기"
+          class="service-route-screen-content screen-content voice-settings-content"
+          :data-variant="screen.variant"
+        >
+          <div class="content">
+            <VoiceSettingsPanel
+              mode="preview"
+              :disabled="isBusy"
+            />
+          </div>
+        </section>
+
+        <section
           v-if="
             screen?.contentHtml &&
             !(service === 'transfer' && screenKey === 'transfer-confirm') &&
             !hideScreenActions &&
             !isBillSourceSelection &&
             !isBillCameraScreen &&
+            !isVoiceSettingsSelectScreen &&
+            !isVoiceSettingsPreviewScreen &&
             !isMobileBranchScreen &&
             !isReminderScreen &&
             !showVoiceControl &&

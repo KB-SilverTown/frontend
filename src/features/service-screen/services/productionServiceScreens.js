@@ -180,8 +180,11 @@ const actionRoutesByScreenKey = {
     'living-branch-detail': { primary: 'living-branches' },
     'living-location-permission': { primary: 'living-branches', secondary: 'living-branches' },
     'living-voice-settings': {
-      primary: { name: 'my-page' },
-      secondary: homeRoute('living'),
+      primary: {
+        name: 'my-page-voice',
+        params: { screenKey: 'voice-voice-select' },
+      },
+      secondary: { name: 'my-page' },
     },
     'living-profile-edit': { primary: homeRoute('living'), secondary: homeRoute('living') },
     'living-emergency-contact-edit': {

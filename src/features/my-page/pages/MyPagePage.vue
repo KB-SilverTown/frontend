@@ -67,7 +67,7 @@ async function handleLogout() {
           >
             <span>
               <strong>목소리 변경</strong>
-              <small>안내 음성과 말하기 속도를 바꿉니다.</small>
+              <small>안내 음성, 속도와 높낮이를 바꿉니다.</small>
             </span>
             <b aria-hidden="true">›</b>
           </RouterLink>

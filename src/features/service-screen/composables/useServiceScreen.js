@@ -118,6 +118,15 @@ export function useServiceScreen() {
   const showVoiceControl = computed(() =>
     (VOICE_CONVERSATION_SCREENS[service.value] ?? []).includes(screenKey.value),
   )
+  const isVoiceSettingsSelectScreen = computed(
+    () => service.value === 'voice' && screenKey.value === 'voice-voice-select',
+  )
+  const isVoiceSettingsPreviewScreen = computed(
+    () => service.value === 'voice' && screenKey.value === 'voice-voice-preview',
+  )
+  const isVoiceSettingsScreen = computed(
+    () => isVoiceSettingsSelectScreen.value || isVoiceSettingsPreviewScreen.value,
+  )
   const isBillSourceSelection = computed(
     () => service.value === 'bills' && screenKey.value === 'bill-source-select',
   )
@@ -358,6 +367,7 @@ export function useServiceScreen() {
   const isBusy = computed(
     () =>
       actionBusy.value ||
+      (service.value === 'voice' && voiceStore.busy) ||
       transferStore.busy ||
       billStore.busy ||
       (service.value === 'living' && serviceData.loading.reminders) ||
@@ -797,6 +807,15 @@ export function useServiceScreen() {
       transferAmountInput.value = String(transferStore.draftAmount || transferStore.amount)
     }
 
+    if (currentService === 'voice' && isVoiceSettingsScreen.value) {
+      try {
+        await voiceStore.loadSettings()
+      } catch (error) {
+        actionError.value =
+          error?.message || '음성 설정을 불러오지 못했어요. 기본 설정으로 계속할 수 있어요.'
+      }
+    }
+
     return { redirected: false }
   }
 
@@ -1182,6 +1201,20 @@ export function useServiceScreen() {
     if (isReminderErrorScreen.value) return reloadReminders()
     if (isReminderCreateScreen.value || isReminderEditScreen.value) return saveReminder()
 
+    if (isVoiceSettingsSelectScreen.value) return go(primaryRoute.value)
+    if (isVoiceSettingsPreviewScreen.value) {
+      actionBusy.value = true
+      try {
+        await voiceStore.saveSettings(voiceStore.draftSettings)
+        await go({ name: 'my-page' })
+      } catch (error) {
+        actionError.value = error?.message || '음성 설정을 저장하지 못했어요. 다시 시도해 주세요.'
+      } finally {
+        actionBusy.value = false
+      }
+      return
+    }
+
     if (service.value === 'bills' && screenKey.value === 'bill-camera') return captureBillFrame()
     if (
       service.value === 'bills' &&
@@ -1529,6 +1562,11 @@ export function useServiceScreen() {
       showReminderCancelConfirm.value = true
       return
     }
+    if (isVoiceSettingsSelectScreen.value) {
+      voiceStore.resetDraftSettings()
+      return
+    }
+    if (isVoiceSettingsPreviewScreen.value) return go(secondaryRoute.value)
     // transfer-scheduled-edit의 두 번째 단추는 약속 삭제다. 되돌릴 수 없어 확인 문구를 남긴다.
     if (
       service.value === 'transfer' &&
@@ -1567,6 +1605,7 @@ export function useServiceScreen() {
   }
 
   function goBack() {
+    if (isVoiceSettingsScreen.value) voiceStore.discardDraftSettings()
     return goBackOrReplace(router, backRoute.value)
   }
 
@@ -1766,6 +1805,9 @@ export function useServiceScreen() {
     VOICE_SERVICES,
     REPLACE_TARGETS,
     showVoiceControl,
+    isVoiceSettingsSelectScreen,
+    isVoiceSettingsPreviewScreen,
+    isVoiceSettingsScreen,
     isBillSourceSelection,
     isBillCameraScreen,
     isBillSuccessScreen,
