@@ -53,6 +53,26 @@ export const routes = [
     component: () => import('@/views/TransferFlowView.vue'),
   },
   {
+    path: '/transfer/plans',
+    name: 'transfer-plans',
+    component: () => import('@/views/TransferPlanView.vue'),
+  },
+  {
+    path: '/transfer/plans/new',
+    name: 'transfer-plan-new',
+    component: () => import('@/views/TransferPlanView.vue'),
+  },
+  {
+    path: '/transfer/plans/:planId/edit',
+    name: 'transfer-plan-edit',
+    component: () => import('@/views/TransferPlanView.vue'),
+  },
+  {
+    path: '/transfer/notice/:noticeId',
+    name: 'transfer-notice',
+    component: () => import('@/views/TransferNoticeView.vue'),
+  },
+  {
     path: '/transfer/guardian',
     name: 'transfer-guardian',
     component: () => import('@/views/TransferGuardianView.vue'),
