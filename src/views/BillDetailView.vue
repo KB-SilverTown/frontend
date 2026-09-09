@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { billsApi } from '@/api/bills.js'
 import { withAppLoading } from '@/services/appLoading.js'
+import { presentBillPaymentNumber } from '@/services/billPaymentNumberPresentation.js'
 import { presentBill } from '@/services/billPresentation.js'
 import '@/styles/bill-detail.css'
 
@@ -16,6 +17,7 @@ const errorMessage = ref('')
 let requestId = 0
 
 const presentedBill = computed(() => (bill.value ? presentBill(bill.value) : null))
+const hasPaymentNumber = computed(() => Boolean(presentBillPaymentNumber(bill.value)))
 const isOverdue = computed(() => isOverdueStatus(bill.value))
 const pageTitle = computed(() => (isOverdue.value ? '지난 고지서' : '고지서 확인'))
 const pageDescription = computed(() =>
@@ -80,6 +82,12 @@ function openReview() {
   const billId = String(route.params.billId ?? '').trim()
   if (!billId || isOverdue.value) return
   return router.push({ name: 'bill-review', params: { billId } })
+}
+
+function openPaymentNumber() {
+  const billId = String(route.params.billId ?? '').trim()
+  if (!billId || isOverdue.value || !hasPaymentNumber.value) return
+  return router.push({ name: 'bill-payment-number', params: { billId } })
 }
 
 function openCamera() {
@@ -184,6 +192,14 @@ onBeforeUnmount(() => {
       </main>
 
       <footer class="app-actions bill-detail-actions">
+        <Button
+          v-if="presentedBill && !loading && !errorMessage && !isOverdue && hasPaymentNumber"
+          class="w-full"
+          variant="secondary"
+          @click="openPaymentNumber"
+        >
+          납부번호 확인
+        </Button>
         <Button
           v-if="presentedBill && !loading && !errorMessage && !isOverdue"
           class="w-full"
