@@ -13,6 +13,7 @@ const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
 const DEFAULT_START_TIMEOUT_MS = 10_000
 const DEFAULT_CANCEL_TIMEOUT_MS = 5_000
 const DEFAULT_STOP_TIMEOUT_MS = 5_000
+const DEFAULT_TURN_RESPONSE_TIMEOUT_MS = 12_000
 
 const ERROR_MESSAGES = {
   VOICE_STREAM_UNAVAILABLE: '음성 연결이 되지 않았어요. 화면 단추로 진행해 주세요.',
@@ -25,6 +26,8 @@ const ERROR_MESSAGES = {
   VOICE_STREAM_START_TIMEOUT: '음성 입력 준비가 늦어지고 있어요. 다시 말씀해 주세요.',
   VOICE_STREAM_CANCEL_TIMEOUT: '음성 안내를 끊지 못했어요. 다시 말씀해 주세요.',
   VOICE_STREAM_STOP_TIMEOUT: '음성 입력 종료가 늦어지고 있어요. 다시 말씀해 주세요.',
+  VOICE_STREAM_RESPONSE_TIMEOUT:
+    '음성 내용을 확인하지 못했어요. 다시 말씀하거나 글자로 입력해 주세요.',
 }
 
 function streamError(code, message = ERROR_MESSAGES[code]) {
@@ -243,6 +246,12 @@ export async function openVoiceStream(options = {}) {
       ? Number(options.stopTimeoutMs)
       : DEFAULT_STOP_TIMEOUT_MS,
   )
+  const turnResponseTimeoutMs = Math.max(
+    1,
+    Number.isFinite(Number(options.turnResponseTimeoutMs))
+      ? Number(options.turnResponseTimeoutMs)
+      : DEFAULT_TURN_RESPONSE_TIMEOUT_MS,
+  )
 
   const onOpen = callbackOf(options, 'onOpen')
   const onStartAck = callbackOf(options, 'onStartAck')
@@ -269,6 +278,7 @@ export async function openVoiceStream(options = {}) {
   let stopPending = false
   let stopAcknowledged = false
   let stopTimer = null
+  let turnResponseTimer = null
   const sentFrames = new Map()
   let bargeInPending = null
   let lastQueuedSequence = -1
@@ -300,6 +310,11 @@ export async function openVoiceStream(options = {}) {
   function clearStopTimer() {
     if (stopTimer !== null) clearTimeout(stopTimer)
     stopTimer = null
+  }
+
+  function clearTurnResponseTimer() {
+    if (turnResponseTimer !== null) clearTimeout(turnResponseTimer)
+    turnResponseTimer = null
   }
 
   function clearSentFrames() {
@@ -496,6 +511,7 @@ export async function openVoiceStream(options = {}) {
 
   function resetTurnState() {
     clearStopTimer()
+    clearTurnResponseTimer()
     clearSentFrames()
     activeInputTurnId = ''
     turnOpen = false
@@ -528,6 +544,15 @@ export async function openVoiceStream(options = {}) {
       stopTimer = null
       failActiveTurn(streamError('VOICE_STREAM_STOP_TIMEOUT'))
     }, stopTimeoutMs)
+  }
+
+  function armTurnResponseTimer(inputTurnId) {
+    clearTurnResponseTimer()
+    turnResponseTimer = setTimeout(() => {
+      turnResponseTimer = null
+      if (!turnOpen || activeInputTurnId !== inputTurnId) return
+      failActiveTurn(streamError('VOICE_STREAM_RESPONSE_TIMEOUT'))
+    }, turnResponseTimeoutMs)
   }
 
   function failActiveTurn(error, notify = true) {
@@ -584,6 +609,7 @@ export async function openVoiceStream(options = {}) {
         stopPending = false
         stopAcknowledged = true
         clearStopTimer()
+        armTurnResponseTimer(inputTurnId)
         onStopAck({ inputTurnId })
       }
       return
