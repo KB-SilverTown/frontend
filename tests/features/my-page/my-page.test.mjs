@@ -9,6 +9,7 @@ const readSource = createSourceReader(import.meta.url)
 const myPageSource = readSource('../../../src/features/my-page/pages/MyPagePage.vue')
 const fontSizeSource = readSource('../../../src/features/my-page/pages/FontSizePage.vue')
 const transferHomeSource = readSource('../../../src/features/transfer/pages/TransferHomePage.vue')
+const transferPinSource = readSource('../../../src/features/transfer/pages/TransferPinPage.vue')
 const serviceHomeSource = readSource('../../../src/app/pages/ServiceHomePage.vue')
 const routeViewPageSource = readSource(
   '../../../src/features/service-screen/pages/ServiceScreenPage.vue',
@@ -115,6 +116,26 @@ test('my page exposes a logout action', () => {
     myPageSource,
     /await onboardingStore\.logout\(\)[\s\S]*await router\.replace\([\s\S]*finally\s*\{\s*isLoggingOut\.value = false/s,
   )
+})
+
+test('transfer PIN controls stay within the Android mobile content width', () => {
+  assert.match(transferPinSource, /class="transfer-pin-form"/)
+
+  const formBlock = transferStyleSource.match(/\.transfer-pin-form\s*\{([\s\S]*?)\}/)?.[1]
+  const inputBlock = transferStyleSource.match(
+    /\.transfer-pin-form \.service-route-input-field input\s*\{([\s\S]*?)\}/,
+  )?.[1]
+  const submitBlock = transferStyleSource.match(/\.transfer-pin-submit\s*\{([\s\S]*?)\}/)?.[1]
+
+  assert.ok(formBlock, 'transfer PIN form should have a dedicated layout rule')
+  assert.match(formBlock, /min-width:\s*0;/)
+  assert.ok(inputBlock, 'transfer PIN inputs should have a dedicated sizing rule')
+  assert.match(inputBlock, /width:\s*100%;/)
+  assert.match(inputBlock, /min-width:\s*0;/)
+  assert.match(inputBlock, /box-sizing:\s*border-box;/)
+  assert.ok(submitBlock, 'transfer PIN submit button should have a dedicated sizing rule')
+  assert.match(submitBlock, /width:\s*100%;/)
+  assert.match(submitBlock, /box-sizing:\s*border-box;/)
 })
 
 test('production navigation exposes my page as the rightmost fourth item', () => {

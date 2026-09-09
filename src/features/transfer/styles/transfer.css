@@ -837,6 +837,17 @@
 .transfer-pin-form {
   display: grid;
   gap: 6px;
+  min-width: 0;
+}
+
+.transfer-pin-form .service-route-input-field {
+  min-width: 0;
+}
+
+.transfer-pin-form .service-route-input-field input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .transfer-pin-guide {
@@ -864,6 +875,7 @@
 
 .transfer-pin-submit {
   width: 100%;
+  box-sizing: border-box;
   margin-top: 18px;
 }
 
