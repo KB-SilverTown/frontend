@@ -405,9 +405,9 @@
 }
 
 .service-route-input-field .transfer-pin-input {
+  box-sizing: border-box;
   width: 100%;
-  max-width: 240px;
-  justify-self: center;
+  justify-self: stretch;
   text-align: center;
   letter-spacing: 0.32em;
 }

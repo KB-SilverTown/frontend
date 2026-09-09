@@ -101,7 +101,11 @@ test('transfer flow keeps explicit confirmation, risk, authentication, and execu
   assert.match(flowPage, /transfer\.authenticate/)
   assert.match(flowPage, /transfer\.execute/)
   assert.match(flowPage, /class="transfer-pin-input"/)
-  assert.match(transferStyles, /\.transfer-pin-input[\s\S]*max-width: 240px/)
+  assert.match(
+    transferStyles,
+    /\.transfer-pin-input[\s\S]*box-sizing: border-box[\s\S]*width: 100%/,
+  )
+  assert.doesNotMatch(transferStyles, /\.transfer-pin-input\s*\{[^}]*max-width/)
   assert.match(flowPage, /transfer\.startGuardianVerification/)
 })
 
