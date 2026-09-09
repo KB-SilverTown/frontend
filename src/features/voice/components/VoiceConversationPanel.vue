@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Button } from '@/shared/components/ui/button'
-import { useVoiceStore } from '@/features/voice/stores/voice.js'
+import { TRANSFER_VOICE_PHASE, useVoiceStore } from '@/features/voice/stores/voice.js'
 
 const props = defineProps({
   entryPoint: {
@@ -90,7 +90,22 @@ function toRows(payload, depth = 0) {
 
 const displayError = computed(() => actionError.value || voiceStore.error?.message || '')
 
+const TRANSFER_PHASE_LABELS = {
+  [TRANSFER_VOICE_PHASE.TTS_PLAYING]: '읽어드리는 중이에요. 말씀하시면 멈춰요',
+  [TRANSFER_VOICE_PHASE.BARGE_IN_PENDING]: '안내를 멈추고 있어요',
+  [TRANSFER_VOICE_PHASE.WAITING_CANCELLED]: '안내를 멈추고 입력을 준비하고 있어요',
+  [TRANSFER_VOICE_PHASE.WAITING_START_ACK]: '음성 입력을 준비하고 있어요',
+  [TRANSFER_VOICE_PHASE.STREAMING]: '듣고 있어요',
+  [TRANSFER_VOICE_PHASE.WAITING_STOP_ACK]: '말씀을 마무리하고 있어요',
+  [TRANSFER_VOICE_PHASE.WAITING_TURN_RESPONSE]: '내용을 확인하고 있어요',
+  [TRANSFER_VOICE_PHASE.TEXT_FALLBACK]: '아래에 글자로 입력해 주세요',
+}
+
 const statusLabel = computed(() => {
+  if (props.entryPoint === 'TRANSFER') {
+    const transferLabel = TRANSFER_PHASE_LABELS[voiceStore.transferPhase]
+    if (transferLabel) return transferLabel
+  }
   if (voiceStore.listening) return '듣고 있어요'
   if (voiceStore.busy) return '확인하고 있어요'
   if (voiceStore.speaking) return '읽어드리는 중이에요'
@@ -98,13 +113,11 @@ const statusLabel = computed(() => {
 })
 
 /**
- * 세션이 아직 없으면 서버가 확정한 sttMode를 알 수 없다.
- * 송금은 진입점만으로 BACKEND_STREAM이 확정이므로 진입점으로 판단한다.
+ * 송금 음성은 세션의 BACKEND_STREAM 계약으로 처리한다. 지원 여부는 실제
+ * 마이크 권한/브라우저 기능을 요청하는 시점에 서비스가 판정하고, 실패하면
+ * 같은 화면에서 키보드 fallback을 연다.
  */
-const voiceCaptureReady = computed(() => {
-  if (voiceStore.session) return !voiceStore.usesBackendStream
-  return props.entryPoint !== 'TRANSFER'
-})
+const voiceCaptureReady = computed(() => true)
 const guidanceText = computed(() => voiceStore.ttsText)
 const busy = computed(() => voiceStore.busy || voiceStore.listening)
 const canSubmitDraft = computed(() => !busy.value && draft.value.trim().length > 0)
@@ -217,6 +230,9 @@ async function listen() {
   } catch (error) {
     actionError.value = error?.message || '말씀을 듣지 못했어요. 다시 시도해 주세요.'
     if (['STT_MODE_UNSUPPORTED', 'STT_UNAVAILABLE'].includes(error?.code)) {
+      showKeyboard.value = true
+    }
+    if (isTransfer.value && voiceStore.transferPhase === TRANSFER_VOICE_PHASE.TEXT_FALLBACK) {
       showKeyboard.value = true
     }
   }
@@ -345,6 +361,7 @@ watch(
 onBeforeUnmount(() => {
   clearNoResponseTimer()
   voiceStore.silence()
+  void voiceStore.stopVoiceResources()
 })
 </script>
 
@@ -380,6 +397,14 @@ onBeforeUnmount(() => {
       class="text-lg leading-relaxed"
     >
       이렇게 들었어요 — “{{ voiceStore.transcript }}”
+    </p>
+
+    <p
+      v-if="voiceStore.partialTranscript"
+      aria-live="polite"
+      class="text-lg leading-relaxed text-muted-foreground"
+    >
+      듣고 있어요 — “{{ voiceStore.partialTranscript }}▌”
     </p>
 
     <div
@@ -471,11 +496,11 @@ onBeforeUnmount(() => {
     </div>
 
     <p
-      v-if="!voiceCaptureReady"
+      v-if="isTransfer && voiceStore.transferPhase === TRANSFER_VOICE_PHASE.TEXT_FALLBACK"
       class="rounded-2xl bg-muted p-4 text-[15px] leading-relaxed"
       role="status"
     >
-      송금 음성 인식은 아직 준비 중이에요. 아래에 직접 입력하시거나 화면 단추로 진행해 주세요.
+      음성 연결이 잠시 어려워요. 아래에서 글자로 입력해 주세요.
     </p>
 
     <p
