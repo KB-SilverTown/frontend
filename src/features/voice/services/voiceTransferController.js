@@ -13,6 +13,13 @@ function inputTurnIdOf(event) {
 
 function noop() {}
 
+function streamUnavailableError() {
+  return createSttError(
+    'VOICE_STREAM_UNAVAILABLE',
+    '음성 연결을 준비하지 못했어요. 다시 시도해 주세요.',
+  )
+}
+
 // 16 kHz PCM 프레임은 약 100 ms다. Azure STT START_ACK 대기와 맞춰 최대 10초를 보관한다.
 const MAX_PRE_ROLL_FRAMES = 100
 
@@ -341,7 +348,7 @@ export function createTransferVoiceController(options = {}) {
     }
 
     const currentStream = await ensureStream()
-    if (!currentStream) throw new Error('VOICE_STREAM_UNAVAILABLE')
+    if (!currentStream) throw streamUnavailableError()
 
     bargeInPending = true
     bargeInRequest = request
@@ -458,7 +465,7 @@ export function createTransferVoiceController(options = {}) {
     monitoring = true
     resetVad()
     const resources = await prepareResources()
-    if (!resources) throw new Error('VOICE_STREAM_UNAVAILABLE')
+    if (!resources) throw streamUnavailableError()
     return resources
   }
 
@@ -467,7 +474,7 @@ export function createTransferVoiceController(options = {}) {
     monitoring = true
     resetVad()
     const resources = await prepareResources()
-    if (!resources) throw new Error('VOICE_STREAM_UNAVAILABLE')
+    if (!resources) throw streamUnavailableError()
     return beginInput()
   }
 
