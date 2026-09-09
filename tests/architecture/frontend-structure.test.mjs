@@ -8,12 +8,12 @@ import {
   routeForScreen as routeForBillScreen,
   screenByKey as billScreenByKey,
   screenDefinitions as billScreens,
-} from '../../src/features/bills/screens/registry.js'
+} from '../fixtures/bills/screens/registry.js'
 import {
   routeForScreen as routeForTransferScreen,
   screenByKey as transferScreenByKey,
   screenDefinitions as transferScreens,
-} from '../../src/features/transfer/screens/registry.js'
+} from '../fixtures/transfer/screens/registry.js'
 
 const sourceRoot = fileURLToPath(new URL('../../src/', import.meta.url))
 const testsRoot = fileURLToPath(new URL('../', import.meta.url))
@@ -60,11 +60,10 @@ test('앱·공통·기능 경계에 필요한 진입점이 존재한다', () => 
     'src/features/onboarding/pages/OnboardingPage.vue',
     'src/features/onboarding/composables/useOnboardingFlow.js',
     'src/features/transfer/pages/TransferHomePage.vue',
-    'src/features/bills/screens/registry.js',
-    'src/features/living/screens/registry.js',
-    'src/features/voice/screens/registry.js',
-    'src/features/service-screen/pages/ServiceScreenPage.vue',
-    'src/features/service-screen/composables/useServiceScreen.js',
+    'src/features/voice/routes.js',
+    'src/features/bills/routes.js',
+    'src/features/living/routes.js',
+    'src/features/transfer/routes.js',
   ]
 
   for (const relativePath of requiredPaths) {

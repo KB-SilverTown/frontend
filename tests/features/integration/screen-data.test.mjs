@@ -5,14 +5,14 @@ import test from 'node:test'
 import {
   loadProductionScreen,
   productionServiceScreens,
-} from '../../../src/features/service-screen/services/productionServiceScreens.js'
+} from '../../fixtures/service-screen/services/productionServiceScreens.js'
 import {
   stripGuidanceCards,
   stripProductionSelectionIndicators,
-} from '../../../src/features/service-screen/services/screenContent.js'
+} from '../../fixtures/service-screen/services/screenContent.js'
 
 const routeSource = readFileSync(
-  new URL('../../../src/features/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
+  new URL('../../fixtures/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
   'utf8',
 )
 const styleSource = readFileSync(

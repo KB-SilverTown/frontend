@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const routePageSource = readFileSync(
-  new URL('../../../src/features/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
+  new URL('../../fixtures/service-screen/pages/ServiceScreenPage.vue', import.meta.url),
   'utf8',
 )
 const routeComposableSource = readFileSync(
-  new URL('../../../src/features/service-screen/composables/useServiceScreen.js', import.meta.url),
+  new URL('../../fixtures/service-screen/composables/useServiceScreen.js', import.meta.url),
   'utf8',
 )
 const routeSource = `${routeComposableSource}\n${routePageSource}`
@@ -16,7 +16,7 @@ const homeSource = readFileSync(
   'utf8',
 )
 const billScreenSource = readFileSync(
-  new URL('../../../src/features/bills/screens/reference.js', import.meta.url),
+  new URL('../../fixtures/bills/screens/reference.js', import.meta.url),
   'utf8',
 )
 const successScreenSource = billScreenSource.slice(

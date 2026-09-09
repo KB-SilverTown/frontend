@@ -1,4 +1,4 @@
-import { createScreenRegistry } from '../../../shared/lib/screen-registry.js'
+import { createScreenRegistry } from '../../../../src/shared/lib/screen-registry.js'
 
 const definitions = [
   ['accounts', 'accounts', '4-02', '계좌 목록'],

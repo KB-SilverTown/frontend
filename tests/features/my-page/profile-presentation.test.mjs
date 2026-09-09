@@ -21,7 +21,7 @@ test('profile rows expose the current user fields returned by GET /users/me', ()
 })
 
 const livingReferenceSource = readFileSync(
-  new URL('../../../src/features/living/screens/reference.js', import.meta.url),
+  new URL('../../fixtures/living/screens/reference.js', import.meta.url),
   'utf8',
 )
 

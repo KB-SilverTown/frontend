@@ -1,4 +1,4 @@
-import { createScreenRegistry } from '../../../shared/lib/screen-registry.js'
+import { createScreenRegistry } from '../../../../src/shared/lib/screen-registry.js'
 
 const definitions = [
   ['voiceSelect', 'select', '5-01', '목소리 고르기', 'my-page-voice'],

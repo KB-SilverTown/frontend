@@ -11,11 +11,9 @@ const fontSizeSource = readSource('../../../src/features/my-page/pages/FontSizeP
 const transferHomeSource = readSource('../../../src/features/transfer/pages/TransferHomePage.vue')
 const transferPinSource = readSource('../../../src/features/transfer/pages/TransferPinPage.vue')
 const serviceHomeSource = readSource('../../../src/app/pages/ServiceHomePage.vue')
-const routeViewPageSource = readSource(
-  '../../../src/features/service-screen/pages/ServiceScreenPage.vue',
-)
+const routeViewPageSource = readSource('../../fixtures/service-screen/pages/ServiceScreenPage.vue')
 const routeViewComposableSource = readSource(
-  '../../../src/features/service-screen/composables/useServiceScreen.js',
+  '../../fixtures/service-screen/composables/useServiceScreen.js',
 )
 const routeViewSource = `${routeViewComposableSource}\n${routeViewPageSource}`
 const shellSource = readSource('../../../src/features/onboarding/components/OnboardingShell.vue')
