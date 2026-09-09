@@ -8,6 +8,13 @@ import {
   VOICE_GENDER_OPTIONS,
   normalizeVoiceSettings,
 } from '../../../src/features/voice/model/settings.js'
+import {
+  CLEAR_SPEECH_EQ,
+  DEFAULT_EQ_PRESET,
+  EQ_PRESET,
+  normalizeEqPreset,
+} from '../../../src/features/voice/model/eqPreset.js'
+import { eqPresetStorageKey } from '../../../src/features/voice/services/eqPresetStorage.js'
 import { createSourceReader } from '../../helpers/source.js'
 
 const readSource = createSourceReader(import.meta.url)
@@ -33,6 +40,19 @@ test('voice settings expose the requested gender, rate, and pitch choices', () =
   )
 })
 
+test('EQ presets use safe defaults and keep CLEAR_SPEECH gain within +6dB', () => {
+  assert.equal(DEFAULT_EQ_PRESET, EQ_PRESET.BALANCED)
+  assert.equal(normalizeEqPreset(EQ_PRESET.CLEAR_SPEECH), EQ_PRESET.CLEAR_SPEECH)
+  assert.equal(normalizeEqPreset('unsupported'), EQ_PRESET.BALANCED)
+  assert.equal(CLEAR_SPEECH_EQ.peaking.gain <= 6, true)
+})
+
+test('EQ preset storage is versioned and separated per authenticated user', () => {
+  assert.notEqual(eqPresetStorageKey('user-a'), eqPresetStorageKey('user-b'))
+  assert.match(eqPresetStorageKey('user-a'), /voice-eq-preset\.v1/)
+  assert.equal(eqPresetStorageKey(null), null)
+})
+
 test('voice settings normalize unsupported values to safe selectable defaults', () => {
   assert.deepEqual(normalizeVoiceSettings({}), DEFAULT_VOICE_SETTINGS)
 
@@ -53,6 +73,7 @@ test('voice settings panel renders every requested option and keeps controls acc
   assert.match(panelSource, /VOICE_GENDER_OPTIONS/)
   assert.match(panelSource, /SPEECH_RATE_OPTIONS/)
   assert.match(panelSource, /PITCH_OPTIONS/)
+  assert.match(panelSource, /EQ_PRESET_OPTIONS/)
   assert.match(panelSource, /v-for="option in VOICE_GENDER_OPTIONS"/)
   assert.match(panelSource, /v-for="option in SPEECH_RATE_OPTIONS"/)
   assert.match(panelSource, /v-for="option in PITCH_OPTIONS"/)
@@ -77,6 +98,7 @@ test('preview playback uses the unsaved draft settings', () => {
   assert.match(voiceStoreSource, /settingsOverride/)
   assert.match(panelSource, /voiceStore\.draftSettings/)
   assert.match(panelSource, /voiceStore\.speakText\([\s\S]*voiceStore\.draftSettings/)
+  assert.match(panelSource, /eqPreset:\s*voiceStore\.draftEqPreset/)
 })
 
 test('service screen uses the interactive panel for the my-page voice flow', () => {
