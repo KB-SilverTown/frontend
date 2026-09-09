@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { apiClient } from '../../../src/shared/api/client.js'
-import { accountsApi } from '../../../src/features/transfer/api/accounts.js'
+import { httpAccountsApi } from '../../../src/features/transfer/api/accounts.js'
 import { billsApi } from '../../../src/features/bills/api/bills.js'
 import { mobileBranchesApi } from '../../../src/features/living/api/mobileBranches.js'
 import { remindersApi } from '../../../src/features/living/api/reminders.js'
-import { transfersApi } from '../../../src/features/transfer/api/transfers.js'
+import { httpTransfersApi } from '../../../src/features/transfer/api/transfers.js'
 
 function useAdapter(handler) {
   const originalAdapter = apiClient.defaults.adapter
@@ -33,7 +33,7 @@ test('accounts API keeps the documented list path and query', async () => {
   })
 
   try {
-    await accountsApi.list({ active: true })
+    await httpAccountsApi.list({ active: true })
     assert.equal(captured.method, 'get')
     assert.equal(captured.url, '/accounts')
     assert.deepEqual(captured.params, { active: true })
@@ -49,14 +49,17 @@ test('transfer API uses supported preparation, verification, and idempotent exec
   })
 
   try {
-    await transfersApi.candidates({ keyword: '김영희' })
-    await transfersApi.prepare({ fromAccountId: 'a-1', recipientId: 'r-1', amount: 30000 })
-    await transfersApi.validateAmount({ recognizedAmount: null, amountCandidates: [30000, 40000] })
-    await transfersApi.riskScore({ transferId: 'transfer-1' })
-    await transfersApi.riskCheck({ transferId: 'transfer-1' })
-    await transfersApi.confirm('transfer-1', { approved: true })
-    await transfersApi.authenticate('transfer-1', { pin: '123456' })
-    await transfersApi.execute('transfer-1', { idempotencyKey: 'transfer-key' })
+    await httpTransfersApi.candidates({ keyword: '김영희' })
+    await httpTransfersApi.prepare({ fromAccountId: 'a-1', recipientId: 'r-1', amount: 30000 })
+    await httpTransfersApi.validateAmount({
+      recognizedAmount: null,
+      amountCandidates: [30000, 40000],
+    })
+    await httpTransfersApi.riskScore({ transferId: 'transfer-1' })
+    await httpTransfersApi.riskCheck({ transferId: 'transfer-1' })
+    await httpTransfersApi.confirm('transfer-1', { approved: true })
+    await httpTransfersApi.authenticate('transfer-1', { pin: '123456' })
+    await httpTransfersApi.execute('transfer-1', { idempotencyKey: 'transfer-key' })
 
     assert.deepEqual(
       requests.map(({ method, url }) => `${method}:${url}`),

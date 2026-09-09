@@ -70,6 +70,19 @@ test('transfer listening renders response cards and routes their actions through
   assert.match(statusPage, /if \(isListeningScreen\.value\) return/)
 })
 
+test('mock listening visibly recognizes a sentence and stages the short confirmation flow', () => {
+  assert.match(transferVoicePanel, /playMockTransferRecognition/)
+  assert.match(transferVoicePanel, /prepareMockTransferDraft/)
+  assert.match(transferVoicePanel, /이 문장이 맞아요/)
+  assert.match(transferVoicePanel, /transfer-amount-confirm/)
+  assert.match(flowPage, /transfer\.authenticate\([\s\S]*transfer\.execute\(\)/)
+  assert.match(
+    flowPage,
+    /result\?\.status === 'SUCCESS' \? 'transfer-complete' : 'transfer-failed'/,
+  )
+  assert.match(flowPage, /시연용 PIN은 123456입니다/)
+})
+
 test('transfer flow keeps explicit confirmation, risk, authentication, and execution gates', () => {
   assert.match(flowPage, /transfer\.selectedRecipient/)
   assert.match(flowPage, /transfer\.validateAmount/)

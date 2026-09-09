@@ -1,8 +1,9 @@
 import { apiClient } from '../../../shared/api/client.js'
 
 import { withIdempotencyKey } from '../../../shared/api/request.js'
+import { isMockTransferEnabled, mockTransfersApi } from './mockTransfer.js'
 
-export const transfersApi = {
+export const httpTransfersApi = {
   async listAccounts(params) {
     const { data } = await apiClient.get('/accounts', { params })
     return data
@@ -80,3 +81,5 @@ export const transfersApi = {
     return data
   },
 }
+
+export const transfersApi = isMockTransferEnabled() ? mockTransfersApi : httpTransfersApi
