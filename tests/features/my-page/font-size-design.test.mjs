@@ -29,12 +29,16 @@ test('font size picker keeps its typography independent from the selected scale'
   assert.ok(pageTokenBlock.includes('--font-size-nav: 16px;'))
 })
 
-test('four-item bottom navigation reserves horizontal breathing space', () => {
+test('four-item bottom navigation spaces labels by their content width', () => {
   const fourItemNavBlock = onboardingStyleSource
     .split('.app-bottom-nav.four-items {')[1]
     ?.split('}')[0]
 
   assert.ok(fourItemNavBlock, 'four-item bottom navigation should define its own layout')
-  assert.ok(fourItemNavBlock.includes('gap: 4px;'))
+  assert.ok(fourItemNavBlock.includes('display: flex;'))
+  assert.ok(fourItemNavBlock.includes('justify-content: space-evenly;'))
   assert.ok(fourItemNavBlock.includes('padding-inline: 8px;'))
+  assert.ok(onboardingStyleSource.includes('.app-bottom-nav.four-items :is(a, button)'))
+  assert.ok(onboardingStyleSource.includes('min-width: 44px;'))
+  assert.ok(onboardingStyleSource.includes('white-space: nowrap;'))
 })
