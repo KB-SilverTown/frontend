@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { Button } from '@/shared/components/ui/button'
@@ -14,6 +14,7 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  autoStart: Boolean,
 })
 
 const router = useRouter()
@@ -362,6 +363,10 @@ onBeforeUnmount(() => {
   clearNoResponseTimer()
   voiceStore.silence()
   void voiceStore.stopVoiceResources()
+})
+
+onMounted(() => {
+  if (props.autoStart) void listen()
 })
 </script>
 
