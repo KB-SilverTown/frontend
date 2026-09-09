@@ -2,7 +2,6 @@ import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { normalizeApiError } from '../../../shared/api/errors.js'
-import { loadAuthSession } from '../../../shared/services/authStorage.js'
 import { voiceApi } from '../api/voice.js'
 import { isSpeechSupported, speak, stop as cancelSpeech } from '../services/speech.js'
 import {
@@ -13,8 +12,6 @@ import {
 } from '../services/voiceStt.js'
 import { createTransferVoiceController } from '../services/voiceTransferController.js'
 import { DEFAULT_VOICE_SETTINGS, normalizeVoiceSettings } from '../model/settings.js'
-import { DEFAULT_EQ_PRESET, normalizeEqPreset } from '../model/eqPreset.js'
-import { loadEqPreset, saveEqPreset } from '../services/eqPresetStorage.js'
 
 /** Azure 토큰이 이 시간 안에 만료되면 재생 전에 새로 받는다. */
 const SPEECH_TOKEN_REFRESH_MARGIN_MS = 60_000
@@ -47,8 +44,6 @@ export const useVoiceStore = defineStore('voice', () => {
   const settings = reactive({ ...DEFAULT_VOICE_SETTINGS })
   const draftSettings = reactive({ ...DEFAULT_VOICE_SETTINGS })
   const settingsLoaded = ref(false)
-  const eqPreset = ref(DEFAULT_EQ_PRESET)
-  const draftEqPreset = ref(DEFAULT_EQ_PRESET)
   const error = ref(null)
   const busy = ref(false)
   const transferPhase = ref(TRANSFER_VOICE_PHASE.IDLE)
@@ -407,7 +402,6 @@ export const useVoiceStore = defineStore('voice', () => {
       const playbackSettings = settingsOverride || settings
       return await speak(content, {
         ...playbackSettings,
-        eqPreset: normalizeEqPreset(settingsOverride?.eqPreset ?? eqPreset.value),
         ttsSsml: ssml,
         speechCredential: credential,
       })
@@ -671,10 +665,6 @@ export const useVoiceStore = defineStore('voice', () => {
     const nextSettings = normalizeVoiceSettings(response)
     Object.assign(settings, nextSettings)
     Object.assign(draftSettings, nextSettings)
-    const authSession = await loadAuthSession().catch(() => null)
-    const nextEqPreset = loadEqPreset(authSession?.userId)
-    eqPreset.value = nextEqPreset
-    draftEqPreset.value = nextEqPreset
     settingsLoaded.value = true
     return response
   }
@@ -683,18 +673,12 @@ export const useVoiceStore = defineStore('voice', () => {
     Object.assign(draftSettings, normalizeVoiceSettings({ ...draftSettings, ...(request || {}) }))
   }
 
-  function updateDraftEqPreset(preset) {
-    draftEqPreset.value = normalizeEqPreset(preset)
-  }
-
   function resetDraftSettings() {
     Object.assign(draftSettings, DEFAULT_VOICE_SETTINGS)
-    draftEqPreset.value = DEFAULT_EQ_PRESET
   }
 
   function discardDraftSettings() {
     Object.assign(draftSettings, settings)
-    draftEqPreset.value = eqPreset.value
   }
 
   async function saveSettings(request) {
@@ -706,10 +690,6 @@ export const useVoiceStore = defineStore('voice', () => {
     const nextSettings = normalizeVoiceSettings({ ...payload, ...(response || {}) })
     Object.assign(settings, nextSettings)
     Object.assign(draftSettings, nextSettings)
-    const authSession = await loadAuthSession().catch(() => null)
-    const nextEqPreset = saveEqPreset(authSession?.userId, draftEqPreset.value)
-    eqPreset.value = nextEqPreset
-    draftEqPreset.value = nextEqPreset
     settingsLoaded.value = true
     return response
   }
@@ -727,8 +707,6 @@ export const useVoiceStore = defineStore('voice', () => {
     partialTranscript.value = ''
     Object.assign(settings, DEFAULT_VOICE_SETTINGS)
     Object.assign(draftSettings, DEFAULT_VOICE_SETTINGS)
-    eqPreset.value = DEFAULT_EQ_PRESET
-    draftEqPreset.value = DEFAULT_EQ_PRESET
     settingsLoaded.value = false
     error.value = null
     busy.value = false
@@ -749,8 +727,6 @@ export const useVoiceStore = defineStore('voice', () => {
     settings,
     draftSettings,
     settingsLoaded,
-    eqPreset,
-    draftEqPreset,
     error,
     busy,
     sttMode,
@@ -788,7 +764,6 @@ export const useVoiceStore = defineStore('voice', () => {
     issueSpeechToken,
     loadSettings,
     updateDraftSettings,
-    updateDraftEqPreset,
     resetDraftSettings,
     discardDraftSettings,
     saveSettings,

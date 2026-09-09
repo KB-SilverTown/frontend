@@ -8,7 +8,6 @@ import {
   VOICE_GENDER_OPTIONS,
   optionLabel,
 } from '@/features/voice/model/settings.js'
-import { EQ_PRESET_OPTIONS, eqPresetLabel } from '@/features/voice/model/eqPreset.js'
 
 const props = defineProps({
   mode: {
@@ -24,9 +23,7 @@ const props = defineProps({
 
 const voiceStore = useVoiceStore()
 const previewState = ref('idle')
-const PREVIEW_TEXT =
-  '안녕하세요. 중요한 금융 안내를 또렷하고 편안하게 들으실 수 있도록 도와드릴게요.'
-const fallbackNotice = ref(false)
+const PREVIEW_TEXT = '안녕하세요. 귀편한 금융입니다. 선택하신 목소리로 안내해 드릴게요.'
 
 const selectedVoice = computed(() =>
   VOICE_GENDER_OPTIONS.find(({ value }) => value === voiceStore.draftSettings.ttsVoice),
@@ -55,21 +52,12 @@ function selectSetting(key, value) {
   voiceStore.updateDraftSettings({ [key]: value })
 }
 
-function selectEqPreset(value) {
-  if (props.disabled) return
-  voiceStore.updateDraftEqPreset(value)
-}
-
 async function playPreview() {
   if (props.disabled) return
 
   previewState.value = 'playing'
   try {
-    const result = await voiceStore.speakText(PREVIEW_TEXT, undefined, {
-      ...voiceStore.draftSettings,
-      eqPreset: voiceStore.draftEqPreset,
-    })
-    fallbackNotice.value = result?.fallback === true
+    const result = await voiceStore.speakText(PREVIEW_TEXT, undefined, voiceStore.draftSettings)
     previewState.value = result?.spoken ? 'complete' : 'unsupported'
   } catch {
     previewState.value = 'failed'
@@ -109,26 +97,6 @@ onBeforeUnmount(() => {
             <small>{{ option.description }}</small>
           </span>
           <b aria-hidden="true">{{ isSelected('ttsVoice', option.value) ? '✓' : '' }}</b>
-        </button>
-      </fieldset>
-
-      <fieldset class="voice-settings-group">
-        <legend>듣기 편한 소리</legend>
-        <button
-          v-for="option in EQ_PRESET_OPTIONS"
-          :key="option.value"
-          :aria-pressed="voiceStore.draftEqPreset === option.value"
-          class="voice-settings-option"
-          :class="{ 'is-selected': voiceStore.draftEqPreset === option.value }"
-          :disabled="disabled"
-          type="button"
-          @click="selectEqPreset(option.value)"
-        >
-          <span
-            ><strong>{{ option.label }}</strong
-            ><small>{{ option.description }}</small></span
-          >
-          <b aria-hidden="true">{{ voiceStore.draftEqPreset === option.value ? '✓' : '' }}</b>
         </button>
       </fieldset>
 
@@ -195,18 +163,7 @@ onBeforeUnmount(() => {
           <dt>목소리 높낮이</dt>
           <dd>{{ selectedPitch }}</dd>
         </div>
-        <div>
-          <dt>듣기 편한 소리</dt>
-          <dd>{{ eqPresetLabel(voiceStore.draftEqPreset) }}</dd>
-        </div>
       </dl>
-
-      <p
-        v-if="fallbackNotice"
-        class="voice-settings-hint"
-      >
-        현재 기기 음성으로 들려드려 EQ가 적용되지 않을 수 있어요.
-      </p>
 
       <button
         class="voice-settings-replay"
