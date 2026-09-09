@@ -13,7 +13,8 @@ function inputTurnIdOf(event) {
 
 function noop() {}
 
-const MAX_PRE_ROLL_FRAMES = 20
+// 16 kHz PCM 프레임은 약 100 ms다. Azure STT START_ACK 대기와 맞춰 최대 10초를 보관한다.
+const MAX_PRE_ROLL_FRAMES = 100
 
 function copyFrame(frame) {
   if (frame instanceof ArrayBuffer) return frame.slice(0)
@@ -219,6 +220,12 @@ export function createTransferVoiceController(options = {}) {
         }),
       )
       .then(async (created) => {
+        try {
+          await created?.waitForOpen?.()
+        } catch (error) {
+          await created?.close?.().catch(() => {})
+          throw error
+        }
         if (expectedLifecycle !== lifecycle || closed) {
           await created?.close?.()
           return null
@@ -263,7 +270,7 @@ export function createTransferVoiceController(options = {}) {
       if (preRollFrames.length >= MAX_PRE_ROLL_FRAMES) {
         handleError(
           createSttError(
-            'VOICE_STREAM_BACKPRESSURE',
+            'VOICE_STREAM_START_TIMEOUT',
             '음성 입력이 너무 길어 준비되지 않았어요. 다시 말씀해 주세요.',
           ),
         )

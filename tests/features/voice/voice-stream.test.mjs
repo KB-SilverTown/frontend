@@ -18,6 +18,7 @@ class FakeWebSocket {
     this.readyState = FakeWebSocket.CONNECTING
     this.bufferedAmount = 0
     this.sent = []
+    this.closeCalls = 0
     FakeWebSocket.instances.push(this)
   }
 
@@ -35,6 +36,7 @@ class FakeWebSocket {
   }
 
   close(code = 1_000) {
+    this.closeCalls += 1
     this.readyState = FakeWebSocket.CLOSED
     this.onclose?.({ code, reason: '' })
   }
@@ -80,6 +82,26 @@ test('voice stream uses the negotiated version and ticket subprotocol without pu
   assert.equal(socket.url.includes('ticket'), false)
 
   await stream.close()
+})
+
+test('voice stream waits for the connection and does not close a CONNECTING socket', async () => {
+  resetSockets()
+
+  const stream = await openVoiceStream({
+    sessionId: 'session-1',
+    ticket: 'one-time-ticket',
+    WebSocketClass: FakeWebSocket,
+  })
+  const socket = FakeWebSocket.instances[0]
+  const ready = stream.waitForOpen()
+
+  await stream.close()
+
+  await assert.rejects(ready, (error) => error.code === 'VOICE_STREAM_DISCONNECTED')
+  assert.equal(socket.closeCalls, 0)
+
+  socket.open()
+  assert.equal(socket.closeCalls, 1)
 })
 
 test('voice stream sends START before PCM and starts a new turn only after cancellation completes', async () => {

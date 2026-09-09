@@ -9,7 +9,8 @@ const DEFAULT_MAX_BUFFERED_BYTES = 256 * 1024
 const DEFAULT_MAX_QUEUED_BYTES = 512 * 1024
 const DEFAULT_RECONNECT_DELAY_MS = 250
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 1
-const DEFAULT_START_TIMEOUT_MS = 5_000
+const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
+const DEFAULT_START_TIMEOUT_MS = 10_000
 const DEFAULT_CANCEL_TIMEOUT_MS = 5_000
 const DEFAULT_STOP_TIMEOUT_MS = 5_000
 
@@ -218,6 +219,12 @@ export async function openVoiceStream(options = {}) {
       ? Number(options.maxReconnectAttempts)
       : DEFAULT_MAX_RECONNECT_ATTEMPTS,
   )
+  const connectTimeoutMs = Math.max(
+    1,
+    Number.isFinite(Number(options.connectTimeoutMs))
+      ? Number(options.connectTimeoutMs)
+      : DEFAULT_CONNECT_TIMEOUT_MS,
+  )
   const startTimeoutMs = Math.max(
     1,
     Number.isFinite(Number(options.startTimeoutMs))
@@ -269,6 +276,7 @@ export async function openVoiceStream(options = {}) {
   let lastReceivedSequence = -1
   let serverSequenceKnown = false
   let errorReportedForClose = false
+  let connectionOperation = null
 
   function recalculatePendingBytes() {
     pendingBytes = pending.reduce((total, item) => total + item.bytes, 0)
@@ -357,6 +365,14 @@ export async function openVoiceStream(options = {}) {
     if (errorReportedForClose) return
     errorReportedForClose = true
     report(error)
+  }
+
+  function resolveConnection() {
+    connectionOperation?.resolve()
+  }
+
+  function rejectConnection(error) {
+    connectionOperation?.reject(error)
   }
 
   function sendNow(payload) {
@@ -679,10 +695,24 @@ export async function openVoiceStream(options = {}) {
   }
 
   function createSocket(ticket, isReconnect = false) {
+    if (!isReconnect && !connectionOperation) {
+      connectionOperation = createOperation(
+        'VOICE_STREAM_UNAVAILABLE',
+        connectTimeoutMs,
+        (error) => {
+          closed = true
+          reportCloseError(error)
+        },
+      )
+      // close()만 호출하는 소비자가 있어도 준비 대기 실패를 미처리 거부로 남기지 않는다.
+      connectionOperation.promise.catch(() => {})
+    }
+
     let nextSocket
     try {
       nextSocket = new WebSocketClass(url, buildVoiceStreamProtocols(ticket))
     } catch {
+      rejectConnection(streamError('VOICE_STREAM_UNAVAILABLE'))
       scheduleReconnect(isReconnect ? 'stream' : 'auth')
       return
     }
@@ -694,6 +724,15 @@ export async function openVoiceStream(options = {}) {
     nextSocket.onopen = () => {
       opened = true
       errorReportedForClose = false
+
+      // CONNECTING 상태에서 close()하면 브라우저가 연결 실패 경고를 남긴다. 실제로 열린 뒤
+      // 닫아 사용자 종료 의도만 반영한다.
+      if (closed) {
+        nextSocket.close(1_000)
+        return
+      }
+
+      resolveConnection()
 
       if (isReconnect && turnOpen) {
         if (!startConfirmed) {
@@ -723,6 +762,7 @@ export async function openVoiceStream(options = {}) {
     nextSocket.onclose = (event) => {
       if (socket === nextSocket) socket = null
       onClose(event)
+      if (!opened) rejectConnection(streamError('VOICE_STREAM_UNAVAILABLE'))
       if (closed) return
 
       if (event?.code === POLICY_VIOLATION) {
@@ -908,6 +948,7 @@ export async function openVoiceStream(options = {}) {
 
   async function close() {
     closed = true
+    rejectConnection(streamError('VOICE_STREAM_DISCONNECTED'))
     rejectStart(streamError('VOICE_STREAM_DISCONNECTED'))
     rejectBargeIn(streamError('VOICE_STREAM_DISCONNECTED'))
     resetTurnState()
@@ -917,7 +958,7 @@ export async function openVoiceStream(options = {}) {
 
     const current = socket
     socket = null
-    if (current && current.readyState !== CLOSED) current.close(1_000)
+    if (current?.readyState === OPEN) current.close(1_000)
   }
 
   createSocket(currentTicket)
@@ -927,6 +968,8 @@ export async function openVoiceStream(options = {}) {
     send,
     stop,
     bargeIn,
+    waitForOpen: () =>
+      connectionOperation?.promise ?? Promise.reject(streamError('VOICE_STREAM_UNAVAILABLE')),
     close,
     getState: () => ({
       activeInputTurnId,
