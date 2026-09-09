@@ -16,7 +16,7 @@ export function resolveApiBaseUrl(value) {
 export const apiClient = axios.create({
   baseURL: resolveApiBaseUrl(runtimeEnvironment.VITE_API_BASE_URL),
   timeout: 10_000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 })
 
 apiClient.interceptors.request.use(async (config) => {
