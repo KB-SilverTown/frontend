@@ -404,6 +404,14 @@
   font: inherit;
 }
 
+.service-route-input-field .transfer-pin-input {
+  width: 100%;
+  max-width: 240px;
+  justify-self: center;
+  text-align: center;
+  letter-spacing: 0.32em;
+}
+
 .service-route-voice-control {
   display: grid;
   gap: 8px;
