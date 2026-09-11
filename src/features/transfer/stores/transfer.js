@@ -201,6 +201,7 @@ export const useTransferStore = defineStore('transfer', () => {
     resetFinancialExecutionState()
     prepared.value = response
     transferId.value = response?.transferId ?? transfer
+    saveTransferDraft(transferId.value, response?.preparedAt)
     amount.value = response?.amount ?? amount.value
     draftAmount.value = amount.value
     executeIdempotencyKey.value = createIdempotencyKey()

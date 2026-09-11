@@ -67,6 +67,8 @@ test('transfer listening renders response cards and routes their actions through
   assert.match(transferVoicePanel, /voiceStore\.acceptCardSelection/)
   assert.match(transferVoicePanel, /voiceStore\.rejectCardSelection/)
   assert.match(transferVoicePanel, /voiceStore\.cancelCardFlow/)
+  assert.match(transferVoicePanel, /handoffVoiceTransferToManualConfirmation/)
+  assert.match(transferVoicePanel, /screenKey: 'transfer-confirm'/)
   assert.match(transferVoicePanel, /RECIPIENT_CANDIDATES|candidateHeading/)
   assert.match(transferStyles, /\.transfer-voice-card-option/)
   assert.match(transferStyles, /\.transfer-voice-card-actions/)
@@ -90,6 +92,14 @@ test('mock listening visibly recognizes a sentence and stages the short confirma
   assert.match(transferFlowPanel, /오만원/)
   assert.match(transferFlowPanel, /오십만원/)
   assert.match(transferStyles, /\.service-route-error:empty/)
+})
+
+test('mock transfer is opt-in so local development uses the real transfer API by default', () => {
+  assert.match(transferVoicePanel, /isMockTransferEnabled/)
+  assert.match(
+    readFileSync(new URL('../../../src/features/transfer/api/mockTransfer.js', import.meta.url), 'utf8'),
+    /VITE_USE_MOCK_TRANSFER === 'true'/,
+  )
 })
 
 test('transfer flow keeps explicit confirmation, risk, authentication, and execution gates', () => {

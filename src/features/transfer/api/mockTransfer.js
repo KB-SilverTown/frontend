@@ -48,7 +48,7 @@ function transferSnapshot() {
 }
 
 export function isMockTransferEnabled(environment = import.meta.env ?? {}) {
-  return environment.VITE_USE_MOCK_TRANSFER !== 'false'
+  return environment.VITE_USE_MOCK_TRANSFER === 'true'
 }
 
 export const mockAccountsApi = {
