@@ -22,6 +22,9 @@ function streamUnavailableError() {
 
 // 16 kHz PCM 프레임은 약 100 ms다. Azure STT START_ACK 대기와 맞춰 최대 10초를 보관한다.
 const MAX_PRE_ROLL_FRAMES = 100
+// 마이크가 열렸지만 VAD가 발화를 잡지 못하면 PCM이 서버로 전송되지 않는다. 이 상태가
+// 무한히 지속되지 않도록 사용자가 다시 말하거나 텍스트로 전환할 수 있는 시간을 둔다.
+const DEFAULT_SPEECH_START_TIMEOUT_MS = 12_000
 
 function copyFrame(frame) {
   if (frame instanceof ArrayBuffer) return frame.slice(0)
@@ -44,6 +47,12 @@ export function createTransferVoiceController(options = {}) {
   const createCapture = options.createCapture ?? startTransferAudioCapture
   const createVad = options.createVad ?? createVoiceActivityDetector
   const createTurnId = options.createTurnId ?? (() => globalThis.crypto?.randomUUID?.() ?? '')
+  const speechStartTimeoutMs = Math.max(
+    1,
+    Number.isFinite(Number(options.speechStartTimeoutMs))
+      ? Number(options.speechStartTimeoutMs)
+      : DEFAULT_SPEECH_START_TIMEOUT_MS,
+  )
 
   const onBeforeBargeIn = options.onBeforeBargeIn ?? noop
   const onBargeInPending = options.onBargeInPending ?? noop
@@ -82,12 +91,35 @@ export function createTransferVoiceController(options = {}) {
   let startAcknowledged = false
   let activeInputTurnId = ''
   let speechEndedBeforeStart = false
+  let speechDetected = false
+  let speechStartTimer = null
   let preRollFrames = []
   let lifecycle = 0
   const completedInputTurnIds = new Set()
 
   function resetVad() {
     vad.reset()
+  }
+
+  function clearSpeechStartTimer() {
+    if (speechStartTimer !== null) clearTimeout(speechStartTimer)
+    speechStartTimer = null
+  }
+
+  function armSpeechStartTimer() {
+    clearSpeechStartTimer()
+    if (speechDetected || !inputActive || !activeInputTurnId) return
+
+    speechStartTimer = setTimeout(() => {
+      speechStartTimer = null
+      if (closed || !monitoring || !inputActive || !activeInputTurnId || speechDetected) return
+      handleError(
+        createSttError(
+          'VOICE_STREAM_NO_SPEECH',
+          '음성을 듣지 못했어요. 마이크에 조금 더 가까이 말씀해 주세요.',
+        ),
+      )
+    }, speechStartTimeoutMs)
   }
 
   function rememberCompletedTurn(inputTurnId) {
@@ -160,6 +192,8 @@ export function createTransferVoiceController(options = {}) {
     startAcknowledged = false
     activeInputTurnId = ''
     speechEndedBeforeStart = false
+    speechDetected = false
+    clearSpeechStartTimer()
     preRollFrames = []
     resetVad()
     onTurnResponse({ ...event, inputTurnId })
@@ -174,6 +208,8 @@ export function createTransferVoiceController(options = {}) {
       stopPending = false
       startAcknowledged = false
       activeInputTurnId = ''
+      speechDetected = false
+      clearSpeechStartTimer()
       preRollFrames = []
       resetVad()
     }
@@ -192,6 +228,8 @@ export function createTransferVoiceController(options = {}) {
     startAcknowledged = false
     activeInputTurnId = ''
     speechEndedBeforeStart = false
+    speechDetected = false
+    clearSpeechStartTimer()
     preRollFrames = []
     resetVad()
     onError(error)
@@ -252,6 +290,10 @@ export function createTransferVoiceController(options = {}) {
 
     vad.setTtsPlaying?.(Boolean(isSpeaking()))
     const result = vad.process(samples)
+    if (result.speechStart && (inputActive || inputStarting)) {
+      speechDetected = true
+      clearSpeechStartTimer()
+    }
     if (bargeInPending || inputStarting) {
       if (result.speechStart) speechEndedBeforeStart = false
       if (result.speechEnd) speechEndedBeforeStart = true
@@ -270,7 +312,7 @@ export function createTransferVoiceController(options = {}) {
       return
     }
     if (result.speechStart && !inputActive) {
-      void beginInput().catch((error) => {
+      void beginInput(true).catch((error) => {
         if (!closed) onError(error)
       })
     }
@@ -374,7 +416,7 @@ export function createTransferVoiceController(options = {}) {
     }
   }
 
-  async function beginInput() {
+  async function beginInput(speechAlreadyDetected = false) {
     if (closed || !monitoring || inputActive || inputStarting || awaitingResponse || !stream) {
       return ''
     }
@@ -383,6 +425,10 @@ export function createTransferVoiceController(options = {}) {
     preRollFrames = []
     capture?.resetSequence?.()
     speechEndedBeforeStart = false
+    // TTS 중 끼어들기(BARGE_IN)를 기다리는 동안 VAD가 이미 발화를 포착했을 수 있다.
+    // 그 신호를 버리면 pre-roll PCM을 전송하고도 무음 시간 제한이 잘못 동작한다.
+    speechDetected = Boolean(speechAlreadyDetected || speechDetected)
+    clearSpeechStartTimer()
     const interruptedAiTurnId = isSpeaking() ? String(getCurrentTurnId() ?? '').trim() : ''
 
     if (interruptedAiTurnId) {
@@ -435,7 +481,10 @@ export function createTransferVoiceController(options = {}) {
     try {
       const startResult = stream.start(newInputTurnId)
       void Promise.resolve(startResult)
-        .then(() => handleStartReady({ inputTurnId: newInputTurnId }))
+        .then(() => {
+          handleStartReady({ inputTurnId: newInputTurnId })
+          armSpeechStartTimer()
+        })
         .catch((error) => {
           if (activeInputTurnId !== newInputTurnId) return
           handleError(error)
@@ -472,6 +521,8 @@ export function createTransferVoiceController(options = {}) {
     closed = false
     monitoring = true
     resetVad()
+    speechDetected = false
+    clearSpeechStartTimer()
     const resources = await prepareResources()
     if (!resources) throw streamUnavailableError()
     return resources
@@ -481,6 +532,8 @@ export function createTransferVoiceController(options = {}) {
     closed = false
     monitoring = true
     resetVad()
+    speechDetected = false
+    clearSpeechStartTimer()
     const resources = await prepareResources()
     if (!resources) throw streamUnavailableError()
     return beginInput()
@@ -532,6 +585,8 @@ export function createTransferVoiceController(options = {}) {
     startAcknowledged = false
     activeInputTurnId = ''
     speechEndedBeforeStart = false
+    speechDetected = false
+    clearSpeechStartTimer()
     preRollFrames = []
 
     const currentCapture = capture

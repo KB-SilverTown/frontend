@@ -82,6 +82,16 @@ export const useVoiceStore = defineStore('voice', () => {
   )
 
   function toUserError(cause) {
+    // 이미 사용자용으로 정규화한 오류가 Promise 경계를 한 번 더 통과할 수 있다.
+    // 이를 axios 오류처럼 다시 해석하면 실제 STT 오류가 NETWORK_ERROR로 바뀐다.
+    if (
+      cause?.code &&
+      cause?.message &&
+      Object.hasOwn(cause, 'status') &&
+      Array.isArray(cause?.fieldErrors)
+    ) {
+      return cause
+    }
     // axios 오류도 응답 없이 code와 message를 가진다. createSttError가 표식을 남긴
     // 로컬 오류만 그대로 쓰고, 나머지는 normalizeApiError가 사용자 문구로 바꾼다.
     if (cause?.isLocalError && cause?.code && cause?.message) {
@@ -143,6 +153,12 @@ export const useVoiceStore = defineStore('voice', () => {
     const normalized = toUserError(cause)
     reportVoiceDiagnostic(normalized)
     error.value = normalized
+    // Azure가 최종 결과를 만들지 못했어도 부분 전사가 도착했을 수 있다. 이를 즉시
+    // 지우면 사용자는 마이크가 동작했는지조차 알 수 없으므로, 미확정 문장으로 보존한다.
+    if (!transcript.value && partialTranscript.value) {
+      transcript.value = partialTranscript.value
+    }
+    partialTranscript.value = ''
     listening.value = false
     busy.value = false
     transferPhase.value = TRANSFER_VOICE_PHASE.TEXT_FALLBACK
@@ -309,6 +325,9 @@ export const useVoiceStore = defineStore('voice', () => {
     const controller = transferController
     transferController = null
     transferMonitorOwner = null
+    if (!transcript.value && partialTranscript.value) {
+      transcript.value = partialTranscript.value
+    }
     partialTranscript.value = ''
 
     const pending = transferPending

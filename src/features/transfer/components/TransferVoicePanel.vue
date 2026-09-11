@@ -35,8 +35,15 @@ const transcript = computed(() =>
   mockMode ? mockTranscript.value : voiceStore.partialTranscript || voiceStore.transcript,
 )
 const isPartialTranscript = computed(() =>
-  mockMode ? mockPhase.value === 'recognizing' : Boolean(voiceStore.partialTranscript),
+  mockMode
+    ? mockPhase.value === 'recognizing'
+    : Boolean(voiceStore.partialTranscript) && !voiceStore.error,
 )
+const transcriptHeading = computed(() => {
+  if (!transcript.value) return '말씀하신 내용을 여기에 보여드릴게요'
+  if (!mockMode && voiceStore.error) return '인식 중에 들은 내용이에요'
+  return isPartialTranscript.value ? '인식하고 있어요' : '이렇게 들었어요'
+})
 const canSubmitDraft = computed(() => !busy.value && draft.value.trim().length > 0)
 const candidateCard = computed(() => (mockMode ? null : voiceStore.selectableCard))
 const candidateItems = computed(() => (mockMode ? [] : voiceStore.cardItems))
@@ -289,16 +296,7 @@ onBeforeUnmount(() => {
       class="transfer-voice-transcript is-active"
       aria-live="polite"
     >
-      <small
-        ><b aria-hidden="true">●</b>
-        {{
-          transcript
-            ? isPartialTranscript
-              ? '인식하고 있어요'
-              : '이렇게 들었어요'
-            : '말씀하신 내용을 여기에 보여드릴게요'
-        }}</small
-      >
+      <small><b aria-hidden="true">●</b> {{ transcriptHeading }}</small>
       <strong
         >{{ transcript || '마이크를 누르고 말씀해 주세요.'
         }}<i
