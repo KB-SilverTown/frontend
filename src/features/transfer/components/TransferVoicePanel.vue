@@ -7,6 +7,7 @@ import { isMockTransferEnabled } from '@/features/transfer/api/mockTransfer.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
 import { handoffVoiceTransferToManualConfirmation } from '@/features/transfer/services/voiceTransferHandoff.js'
+import { applyVoiceTurnToTransferStore } from '@/features/transfer/services/voiceTransferProgress.js'
 import {
   playMockTransferRecognition,
   prepareMockTransferDraft,
@@ -101,7 +102,7 @@ async function listen() {
 
     await ensureSession()
     const turn = await voiceStore.listenAndSendTurn()
-    await handoffToManualConfirmation(turn)
+    await advanceFromVoiceTurn(turn)
   } catch (error) {
     actionError.value = error?.message || '음성을 확인하지 못했어요. 다시 말씀해 주세요.'
     mockPhase.value = 'idle'
@@ -140,7 +141,7 @@ async function submitDraft() {
     await ensureSession()
     const turn = await voiceStore.sendTextTurn(draft.value)
     draft.value = ''
-    await handoffToManualConfirmation(turn)
+    await advanceFromVoiceTurn(turn)
   } catch (error) {
     actionError.value = error?.message || '입력하신 내용을 보내지 못했어요.'
   }
@@ -160,7 +161,7 @@ async function confirmSelection() {
 
   try {
     const turn = await voiceStore.acceptCardSelection(item.id)
-    await handoffToManualConfirmation(turn)
+    await advanceFromVoiceTurn(turn)
   } catch (error) {
     actionError.value = error?.message || '선택을 확인하지 못했어요. 다시 해주세요.'
   }
@@ -186,6 +187,17 @@ async function handoffToManualConfirmation(turn) {
     name: 'transfer-screen',
     params: { screenKey: 'transfer-confirm' },
   })
+  return true
+}
+
+async function advanceFromVoiceTurn(turn) {
+  const screenKey = applyVoiceTurnToTransferStore(turn, transferStore)
+  if (screenKey === 'transfer-confirm') return handoffToManualConfirmation(turn)
+  if (!screenKey || screenKey === 'transfer-listening') return false
+
+  voiceStore.silence()
+  await voiceStore.stopVoiceResources()
+  await router.push({ name: 'transfer-screen', params: { screenKey } })
   return true
 }
 
@@ -274,16 +286,21 @@ onBeforeUnmount(() => {
     </button>
 
     <section
-      v-if="transcript"
       class="transfer-voice-transcript is-active"
       aria-live="polite"
     >
       <small
         ><b aria-hidden="true">●</b>
-        {{ isPartialTranscript ? '인식하고 있어요' : '이렇게 들었어요' }}</small
+        {{
+          transcript
+            ? isPartialTranscript
+              ? '인식하고 있어요'
+              : '이렇게 들었어요'
+            : '말씀하신 내용을 여기에 보여드릴게요'
+        }}</small
       >
       <strong
-        >{{ transcript || '김영희에게 오만원 보내줘'
+        >{{ transcript || '마이크를 누르고 말씀해 주세요.'
         }}<i
           v-if="isPartialTranscript"
           aria-hidden="true"

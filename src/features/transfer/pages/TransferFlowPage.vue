@@ -6,12 +6,17 @@ import TransferPageShell from '@/features/transfer/components/TransferPageShell.
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferPlanStore } from '@/features/transfer/stores/transferPlan.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
+import { voiceApi } from '@/features/voice/api/voice.js'
+import { useVoiceStore } from '@/features/voice/stores/voice.js'
+import { handoffVoiceTransferToManualConfirmation } from '@/features/transfer/services/voiceTransferHandoff.js'
+import { applyVoiceTurnToTransferStore } from '@/features/transfer/services/voiceTransferProgress.js'
 
 const props = defineProps({ screenKey: { type: String, required: true } })
 const router = useRouter()
 const transfer = useTransferStore()
 const plans = useTransferPlanStore()
 const serviceData = useServiceDataStore()
+const voiceStore = useVoiceStore()
 const busy = ref(false)
 const error = ref('')
 const pin = ref('')
@@ -74,6 +79,36 @@ const flowRoute = (screenKey, query) => ({
   params: { screenKey },
   ...(query ? { query } : {}),
 })
+const voiceCardType = computed(() => voiceStore.displayCard?.type ?? '')
+const voiceTranscript = computed(() => voiceStore.transcript || voiceStore.partialTranscript || '')
+
+async function handoffVoiceTurn(turn) {
+  const transferId = await handoffVoiceTransferToManualConfirmation({
+    turn,
+    sessionId: voiceStore.sessionId,
+    transferStore: transfer,
+    loadAccounts: () =>
+      serviceData.accounts.length
+        ? Promise.resolve(serviceData.accounts)
+        : serviceData.loadAccounts({ active: true }),
+    selectAccount: transfer.selectAccount,
+    handoffSession: voiceApi.handoffToManualConfirmation,
+  })
+  if (!transferId) return false
+
+  voiceStore.silence()
+  await voiceStore.stopVoiceResources()
+  await router.push(flowRoute('transfer-confirm'))
+  return true
+}
+
+async function advanceVoiceTurn(turn) {
+  const screenKey = applyVoiceTurnToTransferStore(turn, transfer)
+  if (screenKey === 'transfer-confirm') return handoffVoiceTurn(turn)
+  if (!screenKey) return false
+  await router.push(flowRoute(screenKey))
+  return true
+}
 const resetError = () => {
   error.value = ''
 }
@@ -85,6 +120,12 @@ async function primary() {
   try {
     if (['transfer-recipient-select', 'transfer-recipient-confirm'].includes(props.screenKey)) {
       if (!transfer.selectedRecipient) throw new Error('받는 분을 직접 선택해 주세요.')
+      if (voiceCardType.value === 'RECIPIENT_CANDIDATES') {
+        const recipientId = transfer.selectedRecipient.recipientId ?? transfer.selectedRecipient.id
+        const turn = await voiceStore.acceptCardSelection(recipientId)
+        await advanceVoiceTurn(turn)
+        return
+      }
       await router.push(flowRoute('transfer-account-select'))
       return
     }
@@ -96,6 +137,15 @@ async function primary() {
     if (props.screenKey === 'transfer-amount-confirm') {
       const amount = transfer.draftAmount
       if (!amount) throw new Error('보낼 금액을 숫자로 입력해 주세요.')
+      if (voiceCardType.value === 'AMOUNT_RECONFIRM') {
+        const item = voiceStore.cardItems.find(
+          (candidate) => Number(candidate?.amount) === Number(amount),
+        )
+        if (!item?.id) throw new Error('보낼 금액을 다시 선택해 주세요.')
+        const turn = await voiceStore.acceptCardSelection(item.id)
+        await advanceVoiceTurn(turn)
+        return
+      }
       const checked = await transfer.validateAmount({
         recognizedAmount: amount,
         amountCandidates: [amount],
@@ -133,6 +183,12 @@ async function primary() {
       return
     }
     if (props.screenKey === 'transfer-risk-confirm') {
+      if (voiceCardType.value === 'TRANSFER_RISK_CHECK') {
+        if (!riskPurpose.value.trim()) throw new Error('송금 목적을 말씀하거나 입력해 주세요.')
+        const turn = await voiceStore.sendTextTurn(riskPurpose.value.trim())
+        await advanceVoiceTurn(turn)
+        return
+      }
       const risk = await transfer.checkRisk({ purposeAnswer: riskPurpose.value.trim() || null })
       if (transfer.isRiskHeld(risk)) await router.push(flowRoute('transfer-pending'))
       else if (transfer.needsAdditionalRiskCheck(risk))
@@ -146,6 +202,9 @@ async function primary() {
         props.screenKey,
       )
     ) {
+      if (voiceCardType.value === 'TRANSFER_HELD') {
+        throw new Error('보호자 확인이 끝날 때까지 잠시 기다려 주세요.')
+      }
       const started = await transfer.startGuardianVerification()
       if (started?.deliveryFailureCode)
         throw new Error('보호자에게 메시지를 보내지 못했어요. 잠시 후 다시 해주세요.')
@@ -248,8 +307,16 @@ watch(
     @back="router.push({ name: 'transfer-home' })"
     @primary="primary"
     @secondary="secondary"
-    ><template #error>{{ error }}</template
-    ><TransferFlowPanel
+    ><template #error>{{ error }}</template>
+    <section
+      v-if="voiceTranscript"
+      aria-live="polite"
+      class="rounded-2xl bg-muted p-4 text-lg leading-relaxed"
+    >
+      <span class="block text-[15px] font-semibold text-muted-foreground">음성으로 들은 내용</span>
+      <strong>{{ voiceTranscript }}</strong>
+    </section>
+    <TransferFlowPanel
       v-if="isCorePanel"
       :screen-key="screenKey" /><label
       v-if="screenKey === 'transfer-risk-confirm'"

@@ -129,7 +129,7 @@ export const useVoiceStore = defineStore('voice', () => {
   let transferMonitorOwner = null
 
   function reportVoiceDiagnostic(normalized) {
-    if (!import.meta.env.DEV) return
+    if (!import.meta.env?.DEV) return
     // 발화·토큰·계좌 정보는 기록하지 않고, 서버가 반환한 진단 식별자만 남긴다.
     console.warn('[voice-transfer]', {
       code: normalized.code,
