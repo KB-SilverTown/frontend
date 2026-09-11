@@ -6,10 +6,12 @@ import { Button } from '@/shared/components/ui/button'
 import { isMockTransferEnabled } from '@/features/transfer/api/mockTransfer.js'
 import { useServiceDataStore } from '@/features/living/stores/serviceData.js'
 import { useTransferStore } from '@/features/transfer/stores/transfer.js'
+import { handoffVoiceTransferToManualConfirmation } from '@/features/transfer/services/voiceTransferHandoff.js'
 import {
   playMockTransferRecognition,
   prepareMockTransferDraft,
 } from '@/features/transfer/services/mockTransferDemo.js'
+import { voiceApi } from '@/features/voice/api/voice.js'
 import { TRANSFER_VOICE_PHASE, useVoiceStore } from '@/features/voice/stores/voice.js'
 
 const router = useRouter()
@@ -98,7 +100,8 @@ async function listen() {
     }
 
     await ensureSession()
-    await voiceStore.listenAndSendTurn()
+    const turn = await voiceStore.listenAndSendTurn()
+    await handoffToManualConfirmation(turn)
   } catch (error) {
     actionError.value = error?.message || '음성을 확인하지 못했어요. 다시 말씀해 주세요.'
     mockPhase.value = 'idle'
@@ -135,8 +138,9 @@ async function submitDraft() {
   actionError.value = ''
   try {
     await ensureSession()
-    await voiceStore.sendTextTurn(draft.value)
+    const turn = await voiceStore.sendTextTurn(draft.value)
     draft.value = ''
+    await handoffToManualConfirmation(turn)
   } catch (error) {
     actionError.value = error?.message || '입력하신 내용을 보내지 못했어요.'
   }
@@ -155,10 +159,34 @@ async function confirmSelection() {
   }
 
   try {
-    await voiceStore.acceptCardSelection(item.id)
+    const turn = await voiceStore.acceptCardSelection(item.id)
+    await handoffToManualConfirmation(turn)
   } catch (error) {
     actionError.value = error?.message || '선택을 확인하지 못했어요. 다시 해주세요.'
   }
+}
+
+async function handoffToManualConfirmation(turn) {
+  const transferId = await handoffVoiceTransferToManualConfirmation({
+    turn,
+    sessionId: voiceStore.sessionId,
+    transferStore,
+    loadAccounts: () =>
+      serviceData.accounts.length
+        ? Promise.resolve(serviceData.accounts)
+        : serviceData.loadAccounts({ active: true }),
+    selectAccount: transferStore.selectAccount,
+    handoffSession: voiceApi.handoffToManualConfirmation,
+  })
+  if (!transferId) return false
+
+  voiceStore.silence()
+  await voiceStore.stopVoiceResources()
+  await router.push({
+    name: 'transfer-screen',
+    params: { screenKey: 'transfer-confirm' },
+  })
+  return true
 }
 
 async function rejectSelection() {

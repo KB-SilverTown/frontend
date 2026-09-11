@@ -30,6 +30,10 @@ export const voiceApi = {
     const { data } = await apiClient.post(`/voice/sessions/${sessionId}/close`)
     return data
   },
+  async handoffToManualConfirmation(sessionId) {
+    const { data } = await apiClient.post(`/voice/sessions/${sessionId}/handoff`)
+    return data
+  },
   async issueStreamTicket(sessionId) {
     const { data } = await apiClient.post(`/voice/sessions/${sessionId}/stream-ticket`)
     return data
