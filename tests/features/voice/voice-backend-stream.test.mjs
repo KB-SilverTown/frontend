@@ -313,6 +313,78 @@ test('backend stream falls back to text when TURN_RESPONSE omits the AI turn ID'
   }
 })
 
+test('backend stream preserves a partial transcript when recognition fails', async () => {
+  setActivePinia(createPinia())
+  FakeWebSocket.instances.length = 0
+  FakeAudioWorkletNode.instances.length = 0
+
+  const originalIssueStreamTicket = voiceApi.issueStreamTicket
+  const originalIssueSpeechToken = voiceApi.issueSpeechToken
+  const originalNativeCheck = Capacitor.isNativePlatform
+
+  const restoreWindow = replaceGlobal('window', { AudioContext: FakeAudioContext })
+  const restoreNavigator = replaceGlobal('navigator', {
+    mediaDevices: {
+      getUserMedia: async () => ({ getTracks: () => [{ stop() {} }] }),
+    },
+  })
+  const restoreWorklet = replaceGlobal('AudioWorkletNode', FakeAudioWorkletNode)
+  const restoreWebSocket = replaceGlobal('WebSocket', FakeWebSocket)
+
+  Capacitor.isNativePlatform = () => false
+  voiceApi.issueStreamTicket = async () => ({ ticket: 'ticket-1' })
+  voiceApi.issueSpeechToken = async () => null
+
+  let store
+  try {
+    store = useVoiceStore()
+    store.sessionId = 'session-1'
+    store.session = {
+      sessionId: 'session-1',
+      flowType: 'TRANSFER',
+      sttMode: 'BACKEND_STREAM',
+      status: 'LISTENING',
+    }
+
+    const pending = store.listenAndSendTurn()
+    const socket = await waitFor(() => FakeWebSocket.instances[0])
+    const inputTurnId = sentJson(socket, 0).inputTurnId
+
+    socket.receive({ type: 'START_ACK', inputTurnId, nextSequence: 0 })
+    socket.receive({
+      type: 'PARTIAL_TRANSCRIPT',
+      inputTurnId,
+      text: '김영희에게',
+    })
+    socket.receive({
+      type: 'ERROR',
+      code: 'SPEECH_RECOGNITION_FAILED',
+      message: '음성을 인식하지 못했습니다. 다시 말씀해 주세요.',
+      retryable: true,
+      requestId: '11111111-1111-1111-1111-111111111111',
+    })
+
+    await assert.rejects(
+      pending,
+      (cause) =>
+        cause.code === 'SPEECH_RECOGNITION_FAILED' &&
+        cause.message === '음성을 인식하지 못했습니다. 다시 말씀해 주세요.',
+    )
+    assert.equal(store.transcript, '김영희에게')
+    assert.equal(store.partialTranscript, '')
+    assert.equal(store.error.code, 'SPEECH_RECOGNITION_FAILED')
+  } finally {
+    await store?.stopVoiceResources?.().catch(() => {})
+    voiceApi.issueStreamTicket = originalIssueStreamTicket
+    voiceApi.issueSpeechToken = originalIssueSpeechToken
+    Capacitor.isNativePlatform = originalNativeCheck
+    restoreWebSocket()
+    restoreWorklet()
+    restoreNavigator()
+    restoreWindow()
+  }
+})
+
 test('late TTS monitor cleanup does not close a newer transfer input stream', async () => {
   setActivePinia(createPinia())
   FakeWebSocket.instances.length = 0

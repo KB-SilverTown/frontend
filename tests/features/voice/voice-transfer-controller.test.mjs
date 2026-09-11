@@ -351,3 +351,33 @@ test('controller clears a synchronous BARGE_IN failure', async () => {
   assert.equal(controller.getState().bargeInPending, false)
   await controller.close()
 })
+
+test('controller reports a recoverable error when no speech is detected after stream start', async () => {
+  const errors = []
+  const controller = createTransferVoiceController({
+    getSessionId: () => 'session-1',
+    getCurrentTurnId: () => '',
+    isSpeaking: () => false,
+    issueStreamTicket: async () => ({ ticket: 'ticket-1' }),
+    createStream: async () => ({
+      start: async () => {},
+      close: async () => {},
+    }),
+    createCapture: async () => ({
+      resetSequence() {},
+      async stop() {},
+    }),
+    createVad: () => createVoiceActivityDetector({ sampleRate: 1_000 }),
+    createTurnId: () => 'input-no-speech',
+    speechStartTimeoutMs: 5,
+    onError: (error) => errors.push(error),
+  })
+
+  await controller.startInput()
+  await new Promise((resolve) => setTimeout(resolve, 20))
+
+  assert.equal(errors.length, 1)
+  assert.equal(errors[0].code, 'VOICE_STREAM_NO_SPEECH')
+  assert.equal(controller.getState().phase, 'IDLE')
+  await controller.close()
+})
