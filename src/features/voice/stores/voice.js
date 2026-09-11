@@ -89,7 +89,8 @@ export const useVoiceStore = defineStore('voice', () => {
         status: null,
         code: cause.code,
         message: cause.message,
-        requestId: null,
+        requestId: cause.requestId ?? null,
+        serverCode: cause.serverCode ?? null,
         fieldErrors: [],
       }
     }
@@ -103,6 +104,7 @@ export const useVoiceStore = defineStore('voice', () => {
       return await request()
     } catch (cause) {
       error.value = toUserError(cause)
+      reportVoiceDiagnostic(error.value)
       throw error.value
     } finally {
       busy.value = false
@@ -126,8 +128,20 @@ export const useVoiceStore = defineStore('voice', () => {
   // TTS 중 생성한 모니터의 늦은 완료/실패가 이후 사용자 입력용 컨트롤러를 정리하지 않게 한다.
   let transferMonitorOwner = null
 
+  function reportVoiceDiagnostic(normalized) {
+    if (!import.meta.env.DEV) return
+    // 발화·토큰·계좌 정보는 기록하지 않고, 서버가 반환한 진단 식별자만 남긴다.
+    console.warn('[voice-transfer]', {
+      code: normalized.code,
+      serverCode: normalized.serverCode ?? null,
+      status: normalized.status ?? null,
+      requestId: normalized.requestId ?? null,
+    })
+  }
+
   function transferUserError(cause) {
     const normalized = toUserError(cause)
+    reportVoiceDiagnostic(normalized)
     error.value = normalized
     listening.value = false
     busy.value = false
