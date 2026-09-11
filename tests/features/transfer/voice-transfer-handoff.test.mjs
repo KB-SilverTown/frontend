@@ -5,6 +5,10 @@ import {
   handoffVoiceTransferToManualConfirmation,
   transferIdForManualConfirmation,
 } from '../../../src/features/transfer/services/voiceTransferHandoff.js'
+import {
+  applyVoiceTurnToTransferStore,
+  transferScreenForVoiceTurn,
+} from '../../../src/features/transfer/services/voiceTransferProgress.js'
 
 const transferId = '30000000-0000-4000-8000-000000000001'
 
@@ -60,4 +64,47 @@ test('handoff reloads the prepared transfer and its source account before closin
     `account:${sourceAccount.accountId}`,
     'handoff:50000000-0000-4000-8000-000000000001',
   ])
+})
+
+test('voice turn state moves to its matching screen without authorizing a transfer', () => {
+  const transferStore = {
+    candidates: [],
+    selectedRecipient: { recipientId: 'old-recipient' },
+    setAmount(value) {
+      this.amount = value
+    },
+  }
+  const recipientTurn = {
+    state: 'AWAITING_RECIPIENT',
+    displayCard: {
+      type: 'RECIPIENT_CANDIDATES',
+      items: [{ id: 'recipient-1', displayName: '김철수' }],
+    },
+  }
+  const amountTurn = {
+    state: 'RECONFIRMING',
+    displayCard: {
+      type: 'AMOUNT_RECONFIRM',
+      focusedItemId: 'amount-1',
+      items: [{ id: 'amount-1', amount: 50000 }],
+    },
+  }
+
+  assert.equal(
+    applyVoiceTurnToTransferStore(recipientTurn, transferStore),
+    'transfer-recipient-select',
+  )
+  assert.deepEqual(transferStore.candidates, [
+    { id: 'recipient-1', recipientId: 'recipient-1', displayName: '김철수' },
+  ])
+  assert.equal(transferStore.selectedRecipient, null)
+  assert.equal(applyVoiceTurnToTransferStore(amountTurn, transferStore), 'transfer-amount-confirm')
+  assert.equal(transferStore.amount, 50000)
+  assert.equal(
+    transferScreenForVoiceTurn({
+      state: 'WAITING_FINAL_APPROVAL',
+      nextAction: 'ASK_FINAL_APPROVAL',
+    }),
+    'transfer-confirm',
+  )
 })
